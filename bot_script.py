@@ -4,7 +4,7 @@ import requests
 import json
 import os
 
-## read token
+# read token
 TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
 
 RED_CATEGORY = "RED"
@@ -17,7 +17,6 @@ NEXT_TURN_PATH = "next_turn/"
 GET_MESSAGES_PATH = "get_messages/"
 CHECK_MESSAGES_PATH = "check_messages/"
 POST_MESSAGE_PATH = "send_message/"
-
 
 
 description = "Dispatch Bot for IKS"
@@ -53,14 +52,14 @@ def patch_url(url_function, id=None, data=None):
     return response.json()
 
 
-def post_url(url_function, data={}):
+def post_url(url_function, data=None):
     """ general function post to create"""
     url = BASE_URL + url_function
     response = requests.post(url, data=json.dumps(data), headers=headers)
     return response.json()
 
 
-def getChannelByName(name):
+def get_channel_by_name(name):
     srv = bot.guilds[0]  # TODO make generic
     for chnl in srv.channels:
         if chnl.name == name:
@@ -70,7 +69,7 @@ def getChannelByName(name):
 
 async def deliver(message):
     dispatch_text = "Dispatch from %s:\n>>> %s" % (message["sender"], message["text"])
-    channel = getChannelByName(message["channelName"])
+    channel = get_channel_by_name(message["channelName"])
     await channel.send(dispatch_text)
 
 
@@ -81,11 +80,12 @@ async def on_ready():
     print(bot.user.id)
     print('------')
 
+
 class Misc(commands.Cog):
     """Miscellaneous Commands"""
 
     @bot.command()
-    async def hello(ctx):
+    async def hello(self, ctx):
         """Says hello"""
         await ctx.send("Hello I am the Dispatch Bot")
 
@@ -94,7 +94,7 @@ class PlayerCommands(commands.Cog):
     """Player Commands"""
 
     @bot.command()
-    async def dispatch(ctx):
+    async def dispatch(self, ctx):
         """Send everything in the same message as a dispatch"""
         try:
             data = {
@@ -111,7 +111,7 @@ class UmpireCommands(commands.Cog):
     """Umpire Commands"""
 
     @bot.command()
-    async def start_game(ctx, name: str):
+    async def start_game(self, ctx, name: str):
         """Start a new game."""
         blue = {}
         red = {}
@@ -128,7 +128,7 @@ class UmpireCommands(commands.Cog):
         print(blue)
         data = {
             "name_channels": list(blue.keys()) + list(red.keys()),
-           "name_game": name
+            "name_game": name
         }
         try:
             res = post_url(NEW_GAME_PATH, data)
@@ -143,7 +143,7 @@ class UmpireCommands(commands.Cog):
             raise
 
     @bot.command()
-    async def next_turn(ctx):
+    async def next_turn(self, ctx):
         """Go to the next turn and deliver all messages for it."""
         try:
             messages = get_url(CHECK_MESSAGES_PATH)
@@ -173,5 +173,6 @@ class UmpireCommands(commands.Cog):
         except Exception as e:
             await ctx.send("There was an error delivering messages:%s" % str(e)[:1000])
             raise
+
 
 bot.run(TOKEN)
