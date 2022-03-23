@@ -12,13 +12,13 @@ BLUE_CATEGORY = "BLUE"
 
 BASE_URL = 'https://django-dispatch-bot.herokuapp.com/bot/'
 NEW_GAME_PATH = "new_game/"
-GET_ROUND_PATH = "get_round"
+GET_ROUND_PATH = "get_round/"
 NEXT_TURN_PATH = "next_turn/"
-GET_MESSAGES_PATH = "get_messages"
-CHECK_MESSAGES_PATH = "check_messages"
+GET_MESSAGES_PATH = "get_messages/"
+CHECK_MESSAGES_PATH = "check_messages/"
 POST_MESSAGE_PATH = "send_message/"
 
-description = '''Dispatch bot for IKS'''
+description = '''Dispatch Bot for IKS'''
 bot = commands.Bot(command_prefix='!', description=description)
 turn = 1
 
@@ -79,14 +79,28 @@ async def on_ready():
 
 
 @bot.command()
+async def help(ctx):
+    """print help message"""
+    help ="""
+     I am the Dispatch Bot and support the following commands:
+     !help                 -> Show this helpful message.
+     !hellp                -> Say hi.
+     !dispatch             -> Send everything that is in the message as a dispatch.
+     !start_game <name>    -> Start a new game called <name>. This will collect the currently available 
+                              BLUE and RED channels.
+     !next_turn            -> Advance the current game to the next turn and deliver all approved dispatches.
+    """
+    await ctx.send(help)
+
+@bot.command()
 async def hello(ctx):
-    """Says world"""
-    await ctx.send("Hello I am the Disptach Bot")
+    """Says hello"""
+    await ctx.send("Hello I am the Dispatch Bot")
 
 
 @bot.command()
 async def dispatch(ctx, message: str):
-    """recieve a disptach from a player"""
+    """receive a dispatch from a player"""
     try:
         data = {
             "text": ctx.message.content.split("!dispatch", 1)[1],
@@ -106,18 +120,20 @@ async def get_round(ctx):
 
 @bot.command()
 async def next_turn(ctx):
-    """Tell the server to avance the turn by one"""
+    """Tell the server to advance the turn by one"""
     try:
         messages = get_url(CHECK_MESSAGES_PATH)
-        if len(messages)>0:
-            await ctx.send("Received %i messages from the server for this turn that are not approved" % len(messages))
+        if len(messages) > 0:
+            error = "Received %i messages from the server for this turn that are not approved.\n" % len(messages)
+            error += "Approve them before advancing to the next turn."
+            await ctx.send(error)
             return
     except Exception as e:
         await ctx.send("There was an error checking the messages:%s" % str(e)[:1000])
         raise
     try:
         res = patch_url(NEXT_TURN_PATH)
-        await ctx.send("Next turn started. This is turn {}, time is {}".format(res["turn"], res["current_time"]))
+        await ctx.send("Next turn started. This is turn {}, time is now {}".format(res["turn"], res["current_time"]))
     except Exception as e:
         await ctx.send("There was an error advancing the turn:%s" % str(e)[:1000])
         raise
@@ -157,8 +173,12 @@ async def start_game(ctx, name):
     }
     try:
         res = post_url(NEW_GAME_PATH, data)
-        await ctx.send("Game created\nName: %s\nTime is now %s\n%i Blue channels\n%i Red channels" % (
-        res["name"], res["start_time"], len(blue), len(red)))
+        message = "Game created\n" \
+                  "Name: %s\n" \
+                  "Time is now %s\n" \
+                  "%i Blue channels\n" \
+                  "%i Red channels" % (res["name"], res["start_time"], len(blue), len(red))
+        await ctx.send(message)
     except Exception as e:
         await ctx.send("There was an error creating the game:%s" % str(e)[:1000])
         raise
@@ -171,13 +191,5 @@ async def dummy_start_game(ctx, game_name: str):
     res = post_url("new_game/", data)
     await ctx.send("A new game " + res["name"] + " has started\n Time is now " + res['start_time'])
 
-
-# @bot.event
-# async def on_message(message):
-#
-#    print(message)
-#    print(message.content)
-#    await bot.process_commands(message)
-#    #await message.send(message.content)
 
 bot.run(TOKEN)
