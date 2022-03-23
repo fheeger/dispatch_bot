@@ -1,0 +1,7 @@
+# Project exclude paths
+/venv/
+/venv2/
+.env
+db.sqlite3
+/.idea/
+*.pyc
