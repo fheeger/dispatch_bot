@@ -94,8 +94,8 @@ class PlayerCommands(commands.Cog):
     """Player Commands"""
 
     @bot.command()
-    async def dispatch(ctx, message: str):
-        """receive a dispatch from a player"""
+    async def dispatch(ctx):
+        """Send everything in the same message as a dispatch"""
         try:
             data = {
                 "text": ctx.message.content.split("!dispatch", 1)[1],
@@ -111,40 +111,40 @@ class UmpireCommands(commands.Cog):
     """Umpire Commands"""
 
     @bot.command()
-    async def start_game(ctx, name):
-       """start a new game"""
-       blue = {}
-       red = {}
-       for entry in ctx.guild.channels:
-           if entry.type == ChannelType.category:
-               if entry.name == RED_CATEGORY:
-                   for channel in entry.text_channels:
-                       red[channel.name] = channel.id
-               if entry.name == BLUE_CATEGORY:
-                   for channel in entry.text_channels:
-                       blue[channel.name] = channel.id
+    async def start_game(ctx, name: str):
+        """Start a new game."""
+        blue = {}
+        red = {}
+        for entry in ctx.guild.channels:
+            if entry.type == ChannelType.category:
+                if entry.name == RED_CATEGORY:
+                    for channel in entry.text_channels:
+                        red[channel.name] = channel.id
+                if entry.name == BLUE_CATEGORY:
+                    for channel in entry.text_channels:
+                        blue[channel.name] = channel.id
 
-       print(red)
-       print(blue)
-       data = {
-           "name_channels": list(blue.keys()) + list(red.keys()),
+        print(red)
+        print(blue)
+        data = {
+            "name_channels": list(blue.keys()) + list(red.keys()),
            "name_game": name
-       }
-       try:
-           res = post_url(NEW_GAME_PATH, data)
-           message = "Game created\n" \
-                     "Name: %s\n" \
-                     "Time is now %s\n" \
-                     "%i Blue channels\n" \
-                     "%i Red channels" % (res["name"], res["start_time"], len(blue), len(red))
-           await ctx.send(message)
-       except Exception as e:
-           await ctx.send("There was an error creating the game:%s" % str(e)[:1000])
-           raise
+        }
+        try:
+            res = post_url(NEW_GAME_PATH, data)
+            message = "Game created\n" \
+                      "Name: %s\n" \
+                      "Time is now %s\n" \
+                      "%i Blue channels\n" \
+                      "%i Red channels" % (res["name"], res["start_time"], len(blue), len(red))
+            await ctx.send(message)
+        except Exception as e:
+            await ctx.send("There was an error creating the game:%s" % str(e)[:1000])
+            raise
 
     @bot.command()
     async def next_turn(ctx):
-        """Tell the server to advance the turn by one"""
+        """Go to the next turn and deliver all messages for it."""
         try:
             messages = get_url(CHECK_MESSAGES_PATH)
             if len(messages) > 0:
