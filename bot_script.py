@@ -19,13 +19,11 @@ CHECK_MESSAGES_PATH = "check_messages/"
 POST_MESSAGE_PATH = "send_message/"
 
 
-help_command = commands.DefaultHelpCommand(
-    no_category='Commands'
-)
+
 description = "Dispatch Bot for IKS"
 bot = commands.Bot(command_prefix='!',
                    description=description,
-                   help_command = help_command)
+                   )
 turn = 1
 
 headers = {
