@@ -7,8 +7,8 @@ import os
 # read token
 TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
 
-RED_CATEGORY = "RED"
-BLUE_CATEGORY = "BLUE"
+RED_CATEGORY = "Red"
+BLUE_CATEGORY = "Blue"
 
 BASE_URL = 'https://django-dispatch-bot.herokuapp.com/bot/'
 NEW_GAME_PATH = "new_game/"
