@@ -81,21 +81,25 @@ async def on_ready():
     print('------')
 
 
-class Misc(commands.Cog):
+class MiscCommands(commands.Cog):
     """Miscellaneous Commands"""
 
-    @bot.command()
+    qualified_name = "Miscellaneous Commands"
+
+    @commands.command()
     async def hello(self, ctx):
-        """Says hello"""
-        await ctx.send("Hello I am the Dispatch Bot")
+        """-> Say hello"""
+        await ctx.send("Hello, I am the DispatchBot")
 
 
 class PlayerCommands(commands.Cog):
     """Player Commands"""
 
-    @bot.command()
+    qualified_name = "Player Commands"
+
+    @commands.command()
     async def dispatch(self, ctx):
-        """Send everything in the same message as a dispatch"""
+        """-> Send everything in the same message as a dispatch"""
         try:
             data = {
                 "text": ctx.message.content.split("!dispatch", 1)[1],
@@ -110,9 +114,11 @@ class PlayerCommands(commands.Cog):
 class UmpireCommands(commands.Cog):
     """Umpire Commands"""
 
-    @bot.command()
+    qualified_name = "Umpire Commands"
+
+    @commands.command()
     async def start_game(self, ctx, name: str):
-        """Start a new game."""
+        """-> Start a new game."""
         blue = {}
         red = {}
         for entry in ctx.guild.channels:
@@ -142,13 +148,13 @@ class UmpireCommands(commands.Cog):
             await ctx.send("There was an error creating the game:%s" % str(e)[:1000])
             raise
 
-    @bot.command()
+    @commands.command()
     async def next_turn(self, ctx):
-        """Go to the next turn and deliver all messages for it."""
+        """-> Go to the next turn and deliver all messages for it."""
         try:
             messages = get_url(CHECK_MESSAGES_PATH)
             if len(messages) > 0:
-                error = "Received %i messages from the server for this turn that are not approved.\n" % len(messages)
+                error = "There are still %i messages on the server that are not approved.\n" % len(messages)
                 error += "Approve them before advancing to the next turn."
                 await ctx.send(error)
                 return
@@ -175,4 +181,7 @@ class UmpireCommands(commands.Cog):
             raise
 
 
+bot.add_cog(MiscCommands())
+bot.add_cog(PlayerCommands())
+bot.add_cog(UmpireCommands())
 bot.run(TOKEN)
