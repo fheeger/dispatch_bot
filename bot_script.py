@@ -91,6 +91,18 @@ class MiscCommands(commands.Cog):
         """-> Say hello"""
         await ctx.send("Hello, I am the DispatchBot")
 
+    @commands.command()
+    async def get_round(self, ctx):
+        """-> get current round"""
+        try:
+            res = get_url(GET_ROUND_PATH)
+            if res['turn'] is None:
+                await ctx.send("There is no game at the moment!")
+            else:
+                await ctx.send("This is round {} for game {}".format(res['turn'], res['name']))
+        except Exception as e:
+            await ctx.send("There was an error when fetching the game details:%s" % str(e)[:1000])
+
 
 class PlayerCommands(commands.Cog):
     """Player Commands"""
@@ -105,8 +117,11 @@ class PlayerCommands(commands.Cog):
                 "text": ctx.message.content.split("!dispatch", 1)[1],
                 "sender": ctx.message.author.name
             }
-            post_url(POST_MESSAGE_PATH, data)
-            await ctx.send("Dispatch was send")
+            res = post_url(POST_MESSAGE_PATH, data)
+            if 'error' in res:
+                await ctx.send("Dispatch could not be send. "+ res['error'])
+            else:
+                await ctx.send("Dispatch was send")
         except Exception as e:
             await ctx.send("There was an error sending your dispatch:%s" % str(e)[:1000])
 
@@ -154,16 +169,17 @@ class UmpireCommands(commands.Cog):
         try:
             messages = get_url(CHECK_MESSAGES_PATH)
             if len(messages) > 0:
-                error = "There are still %i messages on the server that are not approved.\n" % len(messages)
-                error += "Approve them before advancing to the next turn."
+                error = "Warning : there are still %i messages on the server that are not approved.\n" % len(messages)
                 await ctx.send(error)
-                return
         except Exception as e:
             await ctx.send("There was an error checking the messages:%s" % str(e)[:1000])
             raise
         try:
             res = patch_url(NEXT_TURN_PATH)
-            await ctx.send("Next turn started. This is turn {}, time is now {}".format(res["turn"], res["current_time"]))
+            if 'error' in res:
+                await ctx.send("Cannot start the next run. "+ res['error'])
+            else:
+                await ctx.send("Next turn started. This is turn {}, time is now {}".format(res["turn"], res["current_time"]))
         except Exception as e:
             await ctx.send("There was an error advancing the turn:%s" % str(e)[:1000])
             raise
