@@ -17,6 +17,7 @@ NEXT_TURN_PATH = "next_turn/"
 GET_MESSAGES_PATH = "get_messages/"
 CHECK_MESSAGES_PATH = "check_messages/"
 POST_MESSAGE_PATH = "send_message/"
+END_GAME = "end_game/"
 
 
 description = "Dispatch Bot for IKS"
@@ -153,12 +154,15 @@ class UmpireCommands(commands.Cog):
         }
         try:
             res = post_url(NEW_GAME_PATH, data)
-            message = "Game created\n" \
-                      "Name: %s\n" \
-                      "Time is now %s\n" \
-                      "%i Blue channels\n" \
-                      "%i Red channels" % (res["name"], res["start_time"], len(blue), len(red))
-            await ctx.send(message)
+            if 'error' in res:
+                await ctx.send(res['error'])
+            else:
+                message = "Game created\n" \
+                          "Name: %s\n" \
+                          "Time is now %s\n" \
+                          "%i Blue channels\n" \
+                          "%i Red channels" % (res["name"], res["start_time"], len(blue), len(red))
+                await ctx.send(message)
         except Exception as e:
             await ctx.send("There was an error creating the game:%s" % str(e)[:1000])
             raise
@@ -194,6 +198,19 @@ class UmpireCommands(commands.Cog):
                 await deliver(message)
         except Exception as e:
             await ctx.send("There was an error delivering messages:%s" % str(e)[:1000])
+            raise
+
+    @commands.command()
+    async def end_game(self, ctx):
+        """-> End current game"""
+        try:
+            res = patch_url(END_GAME)
+            if 'error' in res:
+                await ctx.send(res['error'])
+            else:
+                await ctx.send("The following game has been ended : %s at turn %i" % (res['name'], res['turn']))
+        except Exception as e:
+            await ctx.send("There was an error ending the game:%s" % str(e)[:1000])
             raise
 
 
