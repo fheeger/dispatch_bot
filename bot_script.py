@@ -102,7 +102,7 @@ class MiscCommands(commands.Cog):
             else:
                 await ctx.send("This is round {} for game {}".format(res['turn'], res['name']))
         except Exception as e:
-            await ctx.send("There was an error when fetching the game details:%s" % str(e)[:1000])
+            await ctx.send("There was an error when fetching the game details: %s" % str(e)[:1000])
 
 
 class PlayerCommands(commands.Cog):
@@ -114,17 +114,26 @@ class PlayerCommands(commands.Cog):
     async def dispatch(self, ctx):
         """-> Send everything in the same message as a dispatch"""
         try:
-            data = {
-                "text": ctx.message.content.split("!dispatch", 1)[1],
-                "sender": ctx.message.author.name
-            }
+            try:
+                data = {
+                    "text": ctx.message.content.split(" ", 1)[1],
+                    "sender": ctx.message.author.display_name
+                }
+            except IndexError as e:
+                await ctx.send("Your command did not contain any content.\n"
+                               "Write !dispatch followed by the content of your dispatch in the same discord message.")
+                return
             res = post_url(POST_MESSAGE_PATH, data)
             if 'error' in res:
-                await ctx.send("Dispatch could not be send. "+ res['error'])
+                await ctx.send("Dispatch could not be send: %s" % res['error'][:1000])
             else:
                 await ctx.send("Dispatch was send")
         except Exception as e:
-            await ctx.send("There was an error sending your dispatch:%s" % str(e)[:1000])
+            await ctx.send("There was an error sending your dispatch: %s" % str(e)[:1000])
+
+    @commands.command()
+    async def Dispatch(self, ctx):
+        await self.dispatch(ctx)
 
 
 class UmpireCommands(commands.Cog):
