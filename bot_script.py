@@ -7,12 +7,12 @@ import json
 import os
 
 # read token
-TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
+TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 
 RED_CATEGORY = "Red"
 BLUE_CATEGORY = "Blue"
 
-BASE_URL = 'https://django-dispatch-bot.herokuapp.com/'
+BASE_URL = os.environ.get("BASE_URL", "https://django-dispatch-bot.herokuapp.com/")
 NEW_GAME_PATH = "bot/new_game/"
 GET_ROUND_PATH = "bot/get_round/"
 NEXT_TURN_PATH = "bot/next_turn/"
