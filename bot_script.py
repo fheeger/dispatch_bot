@@ -232,11 +232,13 @@ class UmpireCommands(commands.Cog):
         message = "**Umpire time has begun**\n" + \
                   "You can not give any more orders until next turn, but you can still write dispatches."
         await broadcast(ctx, message)
+        await ctx.send("Umpire time announcement was send")
 
     @commands.command()
     async def broadcast(self, ctx):
         """-> Send a message to all player channels."""
         await broadcast(ctx, ctx.message.content.split(" ", 1)[1])
+        await ctx.send("Broadcast was send")
 
 
 bot.add_cog(MiscCommands())
