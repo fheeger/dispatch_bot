@@ -60,17 +60,18 @@ def post_url(url_function, data=None):
     return response.json()
 
 
-def get_channel_by_name(name):
-    srv = bot.guilds[0]  # TODO make generic
+def get_channel_by_name(srv, name):
     for chnl in srv.channels:
         if chnl.name == name:
             return chnl
     return None
 
 
-async def deliver(message):
+async def deliver(srv, message):
     dispatch_text = "Dispatch from %s:\n>>> %s" % (message["sender"], message["text"])
-    channel = get_channel_by_name(message["channelName"])
+    channel = get_channel_by_name(srv, message["channelName"])
+    if channel is None:
+        raise ValueError("Can not dinf channel {}".format(message["channelName"]))
     await channel.send(dispatch_text)
 
 
@@ -204,7 +205,7 @@ class UmpireCommands(commands.Cog):
             raise
         try:
             for message in messages:
-                await deliver(message)
+                await deliver(ctx.guild, message)
         except Exception as e:
             await ctx.send("There was an error delivering messages:%s" % str(e)[:1000])
             raise
