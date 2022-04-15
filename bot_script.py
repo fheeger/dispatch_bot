@@ -145,21 +145,16 @@ class UmpireCommands(commands.Cog):
     @commands.command()
     async def start_game(self, ctx, name: str):
         """-> Start a new game."""
-        blue = {}
-        red = {}
+        channels = {}
         for entry in ctx.guild.channels:
             if entry.type == ChannelType.category:
-                if entry.name == RED_CATEGORY:
+                if entry.name in [RED_CATEGORY, BLUE_CATEGORY]:
                     for channel in entry.text_channels:
-                        red[channel.name] = channel.id
-                if entry.name == BLUE_CATEGORY:
-                    for channel in entry.text_channels:
-                        blue[channel.name] = channel.id
+                        channels[channel.name] = channel.id
 
-        print(red)
-        print(blue)
+        print(channels)
         data = {
-            "name_channels": list(blue.keys()) + list(red.keys()),
+            "name_channels": channels,
             "name_game": name
         }
         try:
@@ -170,8 +165,7 @@ class UmpireCommands(commands.Cog):
                 message = "Game created\n" \
                           "Name: %s\n" \
                           "Time is now %s\n" \
-                          "%i Blue channels\n" \
-                          "%i Red channels" % (res["name"], res["start_time"], len(blue), len(red))
+                          "%i channels" % (res["name"], res["start_time"], len(channels))
                 await ctx.send(message)
         except Exception as e:
             await ctx.send("There was an error creating the game:%s" % str(e)[:1000])
