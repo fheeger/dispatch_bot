@@ -230,7 +230,7 @@ class UmpireCommands(commands.Cog):
             return
         try:
             patch_url(
-                "{}/{}".format(ADD_CATEGORY_PATH, game_name),
+                "{}{}/".format(ADD_CATEGORY_PATH, game_name),
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
             )
@@ -254,7 +254,7 @@ class UmpireCommands(commands.Cog):
 
         try:
             patch_url(
-                "{}/{}".format(REMOVE_CATEGORY_PATH, game_name),
+                "{}{}/".format(REMOVE_CATEGORY_PATH, game_name),
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
             )
@@ -272,7 +272,7 @@ class UmpireCommands(commands.Cog):
         game_name = ctx.message.content.split(" ", 2)[1]
         try:
             category_ids = get_url(
-                "{}/{}".format(LIST_CATEGORIES_PATH, game_name),
+                "{}{}/".format(LIST_CATEGORIES_PATH, game_name),
                 params={"server_id": ctx.guild.id}
             )
             category_names = get_category_names_from_ids(ctx.guild, category_ids)
