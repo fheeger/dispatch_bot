@@ -10,14 +10,14 @@ TOKEN = os.environ.get('DISCORD_BOT_TOKEN')
 RED_CATEGORY = "Red"
 BLUE_CATEGORY = "Blue"
 
-BASE_URL = 'https://django-dispatch-bot.herokuapp.com/bot/'
-NEW_GAME_PATH = "new_game/"
-GET_ROUND_PATH = "get_round/"
-NEXT_TURN_PATH = "next_turn/"
-GET_MESSAGES_PATH = "get_messages/"
-CHECK_MESSAGES_PATH = "check_messages/"
-POST_MESSAGE_PATH = "send_message/"
-END_GAME = "end_game/"
+BASE_URL = 'https://django-dispatch-bot.herokuapp.com/'
+NEW_GAME_PATH = "bot/new_game/"
+GET_ROUND_PATH = "bot/get_round/"
+NEXT_TURN_PATH = "bot/next_turn/"
+GET_MESSAGES_PATH = "bot/get_messages/"
+CHECK_MESSAGES_PATH = "bot/check_messages/"
+POST_MESSAGE_PATH = "bot/send_message/"
+END_GAME = "bot/end_game/"
 
 
 description = "Dispatch Bot for IKS"
@@ -192,7 +192,7 @@ class UmpireCommands(commands.Cog):
             if 'error' in res:
                 await ctx.send("Cannot start the next run. "+ res['error'])
             else:
-                await ctx.send("Next turn started. This is turn {}, time is now {}".format(res["turn"], res["current_time"]))
+                await ctx.send("Next turn started. This is turn {turn}, time is now {current_time}".format(**res))
         except Exception as e:
             await ctx.send("There was an error advancing the turn:%s" % str(e)[:1000])
             raise
