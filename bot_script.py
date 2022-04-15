@@ -60,6 +60,16 @@ def post_url(url_function, data=None):
     return response.json()
 
 
+def collect_channels(ctx):
+    channels = {}
+    for entry in ctx.guild.channels:
+        if entry.type == ChannelType.category:
+            if entry.name in [RED_CATEGORY, BLUE_CATEGORY]:
+                for channel in entry.text_channels:
+                    channels[channel.name] = channel
+    return channels
+
+
 def get_channel_by_name(srv, name):
     for chnl in srv.channels:
         if chnl.name == name:
@@ -74,6 +84,10 @@ async def deliver(srv, message):
         raise ValueError("Can not dinf channel {}".format(message["channelName"]))
     await channel.send(dispatch_text)
 
+
+async def broadcast(ctx, message):
+    for channel in collect_channels(ctx).values():
+        await channel.send(message)
 
 @bot.event
 async def on_ready():
@@ -145,16 +159,11 @@ class UmpireCommands(commands.Cog):
     @commands.command()
     async def start_game(self, ctx, name: str):
         """-> Start a new game."""
-        channels = {}
-        for entry in ctx.guild.channels:
-            if entry.type == ChannelType.category:
-                if entry.name in [RED_CATEGORY, BLUE_CATEGORY]:
-                    for channel in entry.text_channels:
-                        channels[channel.name] = channel.id
+        channels = collect_channels(ctx)
 
         print(channels)
         data = {
-            "name_channels": channels,
+            "name_channels": list(channels.keys()),
             "name_game": name
         }
         try:
@@ -216,6 +225,18 @@ class UmpireCommands(commands.Cog):
         except Exception as e:
             await ctx.send("There was an error ending the game:%s" % str(e)[:1000])
             raise
+
+    @commands.command()
+    async def umpire_time(self, ctx):
+        """-> Announce to all player channels that it is umpire time now."""
+        message = "**Umpire time has begun**\n" + \
+                  "You can not give any more orders until next turn, but you can still write dispatches."
+        await broadcast(ctx, message)
+
+    @commands.command()
+    async def broadcast(self, ctx):
+        """-> Send a message to all player channels."""
+        await broadcast(ctx, ctx.message.content.split(" ", 1)[1])
 
 
 bot.add_cog(MiscCommands())
