@@ -229,12 +229,15 @@ class UmpireCommands(commands.Cog):
             await ctx.send(str(e))
             return
         try:
-            patch_url(
+            res = patch_url(
                 "{}{}/".format(ADD_CATEGORY_PATH, game_name),
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
             )
-            await ctx.send("{:n} categories added to game {}".format(len(category_ids), game_name))
+            if 'error' in res:
+                await ctx.send(res['error'])
+            else:
+                await ctx.send("{:n} categories added to game {}".format(len(category_ids), game_name))
         except Exception as e:
             await ctx.send("There was an error adding the category: %s" % str(e)[:1000])
             raise
