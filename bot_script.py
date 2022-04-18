@@ -114,7 +114,7 @@ def get_category_ids_from_context(ctx):
 
 
 def get_category_names_from_ids(server, ids):
-    return [server.get_channel(channel_id).name for channel_id in ids]
+    return [server.get_channel(channel_id['number']).name for channel_id in ids]
 
 
 @bot.event
@@ -256,12 +256,15 @@ class UmpireCommands(commands.Cog):
             return
 
         try:
-            patch_url(
+            res = patch_url(
                 "{}{}/".format(REMOVE_CATEGORY_PATH, game_name),
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
             )
-            await ctx.send("{:n} categories removed from game {}".format(len(category_ids), game_name))
+            if 'error' in res:
+                await ctx.send(res['error'])
+            else:
+                await ctx.send("{:n} categories removed from game {}".format(len(category_ids), game_name))
         except Exception as e:
             await ctx.send("There was an error removing the category: %s" % str(e)[:1000])
             raise
@@ -270,7 +273,7 @@ class UmpireCommands(commands.Cog):
     @commands.command()
     async def list_categories(self, ctx):
         if ctx.message.content.count(" ") < 1:
-            await ctx.send("You have to give the name of a game the category should be removed from.")
+            await ctx.send("You have to give the name of a game to get the list of categories.")
             return
         game_name = ctx.message.content.split(" ", 2)[1]
         try:
