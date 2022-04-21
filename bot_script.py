@@ -8,6 +8,12 @@ import os
 
 # read token
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
+if TOKEN is None and os.path.exists(".env"):
+    for line in open(".env"):
+        key, value = line.strip().split("=")
+        if key == "DISCORD_BOT_TOKEN":
+            TOKEN = value
+
 
 RED_CATEGORY = "Red"
 BLUE_CATEGORY = "Blue"
