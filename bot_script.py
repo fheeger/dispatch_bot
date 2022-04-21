@@ -197,8 +197,12 @@ class UmpireCommands(commands.Cog):
     qualified_name = "Umpire Commands"
 
     @commands.command()
-    async def start_game(self, ctx, name: str):
-        """-> Start a new game."""
+    async def start_game(self, ctx):
+        """-> Start a new game. The first parameter will be the name of your game."""
+        if ctx.message.content.count(" ") < 1:
+            await ctx.send("You must give a name for your game.")
+            return
+        name = ctx.message.content.split(" ", 1)[1]
         if not re.fullmatch("[0-9A-Za-z-_~]+", name):
             await ctx.send("Your game name can include no spaces and only the following characters: 0-9A-Za-z-_~ .")
             return
@@ -234,7 +238,7 @@ class UmpireCommands(commands.Cog):
         if ctx.message.content.count(" ") < 1:
             await ctx.send("You have to give the name of a game the category should be added to.")
             return
-        game_name = ctx.message.content.split(" ", 2)[1]
+        game_name = ctx.message.content.split(" ", 1)[1]
         try:
             category_ids = get_category_ids_from_context(ctx)
         except ValueError as e:
