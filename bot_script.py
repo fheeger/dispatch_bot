@@ -92,7 +92,7 @@ async def deliver(srv, message):
     dispatch_text = "Dispatch from %s:\n>>> %s" % (message["sender"], message["text"])
     channel = get_channel_by_name(srv, message["channelName"])
     if channel is None:
-        raise ValueError("Can not dinf channel {}".format(message["channelName"]))
+        raise ValueError("Can not find channel {}".format(message["channelName"]))
     await channel.send(dispatch_text)
 
 
@@ -115,6 +115,8 @@ def get_category_ids_from_context(ctx):
     command_array = ctx.message.content.split(" ")
     if len(command_array) > 2:
         return get_category_ids(ctx, command_array[2:])
+    elif ctx.channel.category_id is None:
+        raise ValueError("No names given in message and channel has no category")
     else:
         return [ctx.channel.category_id]
 
@@ -225,6 +227,10 @@ class UmpireCommands(commands.Cog):
 
     @commands.command()
     async def add_category(self, ctx):
+        """-> Add one or more categories to a game. First parameter is the game name, all other parameters are """ \
+            """interpreted as category names (remember that discord shows category names in caps even if the are """ \
+            """not). If you do not give any category names, the category, that contains the channel you are typing """\
+            """in will be added."""
         if ctx.message.content.count(" ") < 1:
             await ctx.send("You have to give the name of a game the category should be added to.")
             return
@@ -245,12 +251,16 @@ class UmpireCommands(commands.Cog):
             else:
                 await ctx.send("{:n} categories added to game {}".format(len(category_ids), game_name))
         except Exception as e:
-            await ctx.send("There was an error adding the category: %s" % str(e)[:1000])
+            await ctx.send("There was an error adding the categories: %s" % str(e)[:1000])
             raise
 
 
     @commands.command()
     async def remove_category(self, ctx):
+        """-> Remove one or more categories from a game. First parameter is the game name, all other parameters """ \
+            """are interpreted as category names (remember that discord shows category names in caps even if the """ \
+            """are not). If you do not give any category names, the category, that contains the channel you are """ \
+            """typing in will be removed."""
         if ctx.message.content.count(" ") < 1:
             await ctx.send("You have to give the name of a game the category should be removed from.")
             return
@@ -272,12 +282,13 @@ class UmpireCommands(commands.Cog):
             else:
                 await ctx.send("{:n} categories removed from game {}".format(len(category_ids), game_name))
         except Exception as e:
-            await ctx.send("There was an error removing the category: %s" % str(e)[:1000])
+            await ctx.send("There was an error removing the categories: %s" % str(e)[:1000])
             raise
 
 
     @commands.command()
     async def list_categories(self, ctx):
+        """-> List all categories, that are part of the game."""
         if ctx.message.content.count(" ") < 1:
             await ctx.send("You have to give the name of a game to get the list of categories.")
             return
@@ -290,7 +301,7 @@ class UmpireCommands(commands.Cog):
             category_names = get_category_names_from_ids(ctx.guild, category_ids)
             await ctx.send("List of categories for game {}\n`    {}`".format(game_name, "\n    ".join(category_names)))
         except Exception as e:
-            await ctx.send("There was an error removing the category: %s" % str(e)[:1000])
+            await ctx.send("There was an error listing the categories: %s" % str(e)[:1000])
             raise
 
 
