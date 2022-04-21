@@ -238,7 +238,7 @@ class UmpireCommands(commands.Cog):
         if ctx.message.content.count(" ") < 1:
             await ctx.send("You have to give the name of a game the category should be added to.")
             return
-        game_name = ctx.message.content.split(" ", 1)[1]
+        game_name = ctx.message.content.split(" ", 2)[1]
         try:
             category_ids = get_category_ids_from_context(ctx)
         except ValueError as e:
