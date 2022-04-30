@@ -61,6 +61,7 @@ def patch_url(url_function, res_id=None, data=None, params=None):
     if data:
         data = json.dumps(data)
     response = requests.patch(url, data=data, headers=headers, params=params)
+    response.raise_for_status()
     return response.json()
 
 
@@ -68,6 +69,7 @@ def post_url(url_function, data=None, params=None):
     """ general function post to create"""
     url = BASE_URL + url_function
     response = requests.post(url, data=json.dumps(data), headers=headers, params=params)
+    response.raise_for_status()
     return response.json()
 
 
