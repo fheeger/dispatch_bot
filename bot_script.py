@@ -2,9 +2,9 @@ import re
 
 from discord import ChannelType
 from discord.ext import commands
-import requests
-import json
 import os
+
+from BackendClient import BackendClient
 
 # read token
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
@@ -36,41 +36,6 @@ bot = commands.Bot(command_prefix='!',
                    description=description,
                    )
 turn = 1
-
-headers = {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json'
-}
-
-
-def get_url(url_function, res_id=None, params=None):
-    """ general function get to read"""
-    this_url = BASE_URL + url_function
-    if res_id is not None:
-        this_url += '/' + str(res_id)
-    response = requests.get(this_url, headers=headers, params=params)
-    response.raise_for_status()
-    return response.json()
-
-
-def patch_url(url_function, res_id=None, data=None, params=None):
-    """ general function put to update"""
-    url = BASE_URL + url_function
-    if res_id:
-        url += str(res_id)
-    if data:
-        data = json.dumps(data)
-    response = requests.patch(url, data=data, headers=headers, params=params)
-    response.raise_for_status()
-    return response.json()
-
-
-def post_url(url_function, data=None, params=None):
-    """ general function post to create"""
-    url = BASE_URL + url_function
-    response = requests.post(url, data=json.dumps(data), headers=headers, params=params)
-    response.raise_for_status()
-    return response.json()
 
 
 def collect_channels(ctx):
@@ -134,6 +99,8 @@ async def on_ready():
     print(bot.user.id)
     print('------')
 
+backend = BackendClient(BASE_URL)
+
 
 class MiscCommands(commands.Cog):
     """Miscellaneous Commands"""
@@ -149,7 +116,7 @@ class MiscCommands(commands.Cog):
     async def get_round(self, ctx):
         """-> get current round"""
         try:
-            res = get_url(GET_ROUND_PATH, params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id})
+            res = backend.get_url(GET_ROUND_PATH, params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id})
             if res['turn'] is None:
                 await ctx.send("There is no game at the moment!")
             else:
@@ -176,7 +143,7 @@ class PlayerCommands(commands.Cog):
                 await ctx.send("Your command did not contain any content.\n"
                                "Write !dispatch followed by the content of your dispatch in the same discord message.")
                 return
-            res = post_url(
+            res = backend.post_url(
                 POST_MESSAGE_PATH,
                 data,
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
@@ -218,7 +185,7 @@ class UmpireCommands(commands.Cog):
             "user_id": ctx.author.id,
         }
         try:
-            res = post_url(NEW_GAME_PATH, data)
+            res = backend.post_url(NEW_GAME_PATH, data)
             if 'error' in res:
                 await ctx.send(res['error'])
             else:
@@ -247,7 +214,7 @@ class UmpireCommands(commands.Cog):
             await ctx.send(str(e))
             return
         try:
-            res = patch_url(
+            res = backend.patch_url(
                 "{}{}/".format(ADD_CATEGORY_PATH, game_name),
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
@@ -278,7 +245,7 @@ class UmpireCommands(commands.Cog):
             return
 
         try:
-            res = patch_url(
+            res = backend.patch_url(
                 "{}{}/".format(REMOVE_CATEGORY_PATH, game_name),
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
@@ -300,7 +267,7 @@ class UmpireCommands(commands.Cog):
             return
         game_name = ctx.message.content.split(" ", 2)[1]
         try:
-            category_ids = get_url(
+            category_ids = backend.get_url(
                 "{}{}/".format(LIST_CATEGORIES_PATH, game_name),
                 params={"server_id": ctx.guild.id}
             )
@@ -315,7 +282,7 @@ class UmpireCommands(commands.Cog):
     async def next_turn(self, ctx):
         """-> Go to the next turn and deliver all messages for it."""
         try:
-            messages = get_url(
+            messages = backend.get_url(
                 CHECK_MESSAGES_PATH,
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
             )
@@ -326,7 +293,7 @@ class UmpireCommands(commands.Cog):
             await ctx.send("There was an error checking the messages:%s" % str(e)[:1000])
             raise
         try:
-            res = patch_url(NEXT_TURN_PATH, params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id})
+            res = backend.patch_url(NEXT_TURN_PATH, params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id})
             if 'error' in res:
                 await ctx.send("Cannot start the next turn. "+ res['error'])
             else:
@@ -335,7 +302,7 @@ class UmpireCommands(commands.Cog):
             await ctx.send("There was an error advancing the turn:%s" % str(e)[:1000])
             raise
         try:
-            messages = get_url(
+            messages = backend.get_url(
                 GET_MESSAGES_PATH,
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
             )
@@ -354,7 +321,7 @@ class UmpireCommands(commands.Cog):
     async def end_game(self, ctx):
         """-> End current game"""
         try:
-            res = patch_url(END_GAME, params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id})
+            res = backend.patch_url(END_GAME, params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id})
             if 'error' in res:
                 await ctx.send(res['error'])
             else:
