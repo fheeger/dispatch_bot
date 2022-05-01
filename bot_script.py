@@ -29,6 +29,9 @@ END_GAME = "bot/end_game/"
 ADD_CATEGORY_PATH = "bot/add_category/"
 REMOVE_CATEGORY_PATH = "bot/remove_category/"
 LIST_CATEGORIES_PATH = "bot/get_categories/"
+LIST_CHANNELS_PATH = "bot/get_channels/"
+UPDATE_CHANNELS_PATH = "bot/update_channels/"
+REMOVE_CHANNELS_PATH = "bot/remove_channels/"
 
 
 description = "Dispatch Bot for IKS"
@@ -126,6 +129,8 @@ def get_category_ids_from_context(ctx):
 def get_category_names_from_ids(server, ids):
     return [server.get_channel(channel_id['number']).name for channel_id in ids]
 
+def get_channel_names_from_ids(server, ids):
+    return [server.get_channel(channel_id['channel_id']).name for channel_id in ids]
 
 @bot.event
 async def on_ready():
@@ -212,7 +217,7 @@ class UmpireCommands(commands.Cog):
 
         print(channels)
         data = {
-            "name_channels": list(channels.keys()),
+            "name_channels": [{'name':key, 'id':value.id} for key, value in channels.items()],
             "name_game": name,
             "server_id": ctx.guild.id,
             "user_id": ctx.author.id,
@@ -376,6 +381,21 @@ class UmpireCommands(commands.Cog):
         """-> Send a message to all player channels."""
         await broadcast(ctx, ctx.message.content.split(" ", 1)[1])
         await ctx.send("Broadcast was send")
+
+    @commands.command()
+    async def list_channels(self, ctx):
+        """-> List all channels, that are part of the game."""
+        try:
+            channel_ids = get_url(
+                "{}".format(LIST_CHANNELS_PATH),
+                params={"server_id": ctx.guild.id,
+                        "category_id": ctx.channel.category_id}
+            )
+            channel_names = get_channel_names_from_ids(ctx.guild, channel_ids)
+            await ctx.send("List of channels \n`    {}`".format("\n    ".join(channel_names)))
+        except Exception as e:
+            await ctx.send("There was an error listing the channels: %s" % str(e)[:1000])
+            raise
 
 
 bot.add_cog(MiscCommands())
