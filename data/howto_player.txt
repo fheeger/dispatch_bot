@@ -1,0 +1,19 @@
+**How do I use the Dispatch Bot as a player?**
+
+There are two phases to every turn, Player Time (when the umpires are giving you information and taking your orders) and Umpire Time (when they are working together to adjudicate the turn and you can issue no new orders).
+
+When you want to send a message (in Player or Umpire time), use the syntax:
+
+> !dispatch
+> The content of your dispatch
+
+A good format for the content of your dispatch could be
+
+> To: Character Name you're sending to
+> From: Character Name you are playing
+> Time: Time you're sending this
+> Location: Where you are
+>
+> The content of you message
+
+When the turn ticks over, the umpires will review all messages sent and note when (and if) they will arrive at their destinations. If you’re going to receive messages in the new turn, they will land in your channel about the same time as your screenshot and umpire update.

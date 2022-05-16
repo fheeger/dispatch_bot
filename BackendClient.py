@@ -12,6 +12,16 @@ class BackendClient:
     def __init__(self, base_url):
         self.base_url = base_url
 
+    def call(self, method, url_function, res_id=None, data=None, params=None):
+        if method == "GET":
+            return self.get_url(url_function, res_id, params)
+        elif method == "PATCH":
+            return self.patch_url(url_function, res_id, data, params)
+        elif method == "POST":
+            return self.post_url(url_function, data, params)
+        else:
+            raise ValueError("Unknown method: {}".format(method))
+
     def get_url(self, url_function, res_id=None, params=None):
         """ general function get to read"""
         this_url = self.base_url + url_function
