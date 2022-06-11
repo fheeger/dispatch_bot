@@ -143,7 +143,7 @@ class DispatchBotCog(commands.Cog):
                 await ctx.send("A game with the same name is already going on! Please choose another name")
             else:
                 await ctx.send("There was an error calling the server: {}".format(str(e)[:1000]))
-            return None
+            raise e
 
 
 class MiscCommands(DispatchBotCog):
@@ -249,6 +249,17 @@ class UmpireCommands(DispatchBotCog):
         }
 
         try:
+            if is_iks:
+                #is there a game already
+                turn_res = await self.call_url(
+                    ctx,
+                    "GET",
+                    GET_ROUND_PATH,
+                    params={"server_id": IKS_SERVER_ID}
+                )
+                if turn_res['turn'] is not None:
+                    await ctx.send("There is already a game running. IKS main server can only run one game at a time.")
+                    return
             game_res = await self.call_url(ctx, "POST", NEW_GAME_PATH, data=data)
             if is_iks:
                 cat_res = await self.call_url(
@@ -263,7 +274,7 @@ class UmpireCommands(DispatchBotCog):
                     "PATCH",
                     UPDATE_CHANNELS_PATH,
                     data={"channels": channels},
-                    params={"server_id": 769572185005883393})
+                    params={"server_id": IKS_SERVER_ID})
             else:
                 cat_res = True
                 chnl_res = True
