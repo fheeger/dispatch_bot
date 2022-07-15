@@ -1,5 +1,6 @@
 import re
 
+import discord
 from discord import ChannelType
 from discord.ext import commands
 from requests import HTTPError
@@ -38,8 +39,12 @@ LIST_CHANNEL_PATH = "bot/get_channels/"
 IKS_SERVER_ID = 769572185005883393
 
 description = "Dispatch Bot for IKS"
+intents = discord.Intents.default()
+intents.members = True
+
 bot = commands.Bot(command_prefix='!',
                    description=description,
+                   intents=intents
                    )
 turn = 1
 
@@ -524,8 +529,34 @@ class UmpireCommands(DispatchBotCog):
         await broadcast(ctx, ctx.message.content.split(" ", 1)[1])
         await ctx.send("Broadcast was send")
 
+class AdminCommands(DispatchBotCog):
+    """Admin Commands"""
+
+    qualified_name = "Admin Commands"
+
+    @commands.command()
+    @commands.has_role('Admins')
+    async def message_all(self, ctx, fileName):
+        try:
+            message = open("data/{}".format(fileName), 'r').read()
+        except FileNotFoundError as e:
+            await ctx.send("File {} not found.".format(fileName))
+            return
+        total = len(ctx.guild.members)
+        await ctx.send("Will send message to {} server members.".format(total))
+        success = 0
+        for m, member in enumerate(ctx.guild.members):
+            try:
+                await member.send(message)
+                print("Message send to " + str(member) + " {}/{}".format(m+1, total))
+                success += 1
+            except:
+                print("Message could not be send to " + str(member) + " {}/{}".format(m+1, total))
+        await ctx.send("Message was sent to {} out of {} server members.".format(success, total))
+
 
 bot.add_cog(MiscCommands())
 bot.add_cog(PlayerCommands())
 bot.add_cog(UmpireCommands())
+bot.add_cog(AdminCommands())
 bot.run(TOKEN)
