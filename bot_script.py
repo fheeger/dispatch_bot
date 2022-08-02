@@ -37,6 +37,7 @@ REMOVE_CHANNEL_PATH = "bot/remove_channels/"
 LIST_CHANNEL_PATH = "bot/get_channels/"
 
 IKS_SERVER_ID = 769572185005883393
+ADMIN_ROLES = []
 
 description = "Dispatch Bot for IKS"
 intents = discord.Intents.default()
@@ -113,8 +114,14 @@ def get_channel_ids_from_context(ctx):
 
 def get_channels_from_context(ctx):
     command_array = ctx.message.content.split(" ")
+    channels = {}
+    for name in command_array[1:]:
+        channel = get_channel_by_name(ctx.guild, name)
+        if channel is None:
+            raise AttributeError("Did not find channel with name: {}".format(name))
+        channels[channel.id] = name
     if len(command_array) > 1:
-        return {"channels": {get_channel_by_name(ctx.guild, name).id: name for name in command_array[1:]}}
+        return {"channels": channels}
     else:
         return {"channels": {ctx.channel.id: ctx.channel.name}}
 
@@ -384,6 +391,9 @@ class UmpireCommands(DispatchBotCog):
     async def add_channel(self, ctx):
         try:
             channels = get_channels_from_context(ctx)
+        except AttributeError as e:
+            await ctx.send(e.args[0])
+            return
         except ValueError as e:
             await ctx.send(str(e))
             return
@@ -443,7 +453,7 @@ class UmpireCommands(DispatchBotCog):
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
             )
         except Exception as e:
-            await ctx.send("There was an error removing channels: %s" % str(e)[:1000])
+            await ctx.send("There was an error listing channels: %s" % str(e)[:1000])
             raise
         if response:
             channel_names = [channel["name"] for channel in response]
@@ -529,13 +539,19 @@ class UmpireCommands(DispatchBotCog):
         await broadcast(ctx, ctx.message.content.split(" ", 1)[1])
         await ctx.send("Broadcast was send")
 
+    @commands.command()
+    async def url(self, ctx):
+        """-> Reply with current backend URL."""
+        await ctx.send("You can reach the backend at: {}admin".format(BASE_URL))
+
+
 class AdminCommands(DispatchBotCog):
     """Admin Commands"""
 
     qualified_name = "Admin Commands"
 
     @commands.command()
-    @commands.has_role('Admins')
+    @commands.has_any_role(*ADMIN_ROLES)
     async def message_all(self, ctx, fileName):
         try:
             message = open("data/{}".format(fileName), 'r').read()
