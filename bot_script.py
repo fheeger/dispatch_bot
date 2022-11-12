@@ -11,11 +11,14 @@ from BackendClient import BackendClient
 
 # read token
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
-if TOKEN is None and os.path.exists(".env"):
+COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX", "!")
+if os.path.exists(".env"):
     for line in open(".env"):
         key, value = line.strip().split("=")
-        if key == "DISCORD_BOT_TOKEN":
+        if TOKEN is None and key == "DISCORD_BOT_TOKEN":
             TOKEN = value
+        if key == "COMMAND_PREFIX":
+            COMMAND_PREFIX = value
 
 
 RED_CATEGORY = "Red"
@@ -41,9 +44,10 @@ ADMIN_ROLES = []
 
 description = "Dispatch Bot for IKS"
 intents = discord.Intents.default()
-intents.members = True
+#intents.members = True
 
-bot = commands.Bot(command_prefix='!',
+
+bot = commands.Bot(command_prefix=COMMAND_PREFIX,
                    description=description,
                    intents=intents
                    )
@@ -135,6 +139,8 @@ async def on_ready():
     print('Logged in as')
     print(bot.user.name)
     print(bot.user.id)
+    print("command prefix: {}".format(bot.command_prefix))
+    print("connected to: {}".format(",".join([g.name for g in bot.guilds])))
     print('------')
 
 backend = BackendClient(BASE_URL)
@@ -166,7 +172,7 @@ class MiscCommands(DispatchBotCog):
     @commands.command()
     async def hello(self, ctx):
         """-> Say hello"""
-        await ctx.send("Hello, I am the DispatchBot")
+        await ctx.send("Hello, I am the TEST DispatchBot")
 
     @commands.command()
     async def get_round(self, ctx):
@@ -500,12 +506,16 @@ class UmpireCommands(DispatchBotCog):
         except Exception as e:
             await ctx.send("There was an error receiving messages:%s" % str(e)[:1000])
             raise
-        try:
-            for message in messages:
+        messagesSend = 0
+        for message in messages:
+            try:
                 await deliver(ctx.guild, message)
-        except Exception as e:
-            await ctx.send("There was an error delivering messages:%s" % str(e)[:1000])
-            raise
+            except Exception as e:
+                await ctx.send("There was an error delivering a message."
+                               "The server gave the following error:\n%s"% (str(e)[:1000]))
+                await ctx.send("\nMessage was from %s and started with %s" % (message["sender"], message["text"][:100]))
+            messagesSend += 1
+        await ctx.send("%i of %i messages delivered." % (messagesSend, len(messages)))
 
     @commands.command()
     async def end_game(self, ctx):
