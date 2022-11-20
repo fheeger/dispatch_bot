@@ -1,3 +1,4 @@
+import datetime
 import re
 
 import discord
@@ -44,6 +45,7 @@ ADMIN_ROLES = []
 
 SEND_EMOJI = "📨"
 MESSAGE_HISTORY_LIMIT = 20
+MISSED_MESSAGE_AGE_LIMIT = datetime.timedelta(days=3)
 DISPATCH_COMMANDS = [
     "%sdispatch" % COMMAND_PREFIX,
     "%sDispatch" % COMMAND_PREFIX
@@ -142,7 +144,15 @@ def get_channel_names_from_ids(ctx, ids):
 
 
 def is_new(message):
-    return not any([r.emoji == SEND_EMOJI for r in message.reactions])
+    return not is_older_than(message, MISSED_MESSAGE_AGE_LIMIT) and not has_emoji(message, SEND_EMOJI)
+
+
+def is_older_than(message, max_age):
+    return datetime.datetime.now() - message.crreated_at < max_age
+
+
+def has_emoji(message, emoji):
+    return any([r.emoji == emoji for r in message.reactions])
 
 
 async def on_ready():
@@ -551,7 +561,8 @@ class UmpireCommands(DispatchBotCog):
 
     @commands.command()
     async def check_for_missed_messages(self, ctx):
-        """-> Check for undelivered messages. This is normally unnecessary but can help when the bot was down."""
+        """-> Check for undelivered messages. This is normally unnecessary but can help when the bot was down.""" \
+            """Messages that are older than 3 days are ignored."""
         try:
             response = await self.call_url(
                 ctx,
