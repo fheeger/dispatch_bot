@@ -42,6 +42,12 @@ LIST_CHANNEL_PATH = "bot/get_channels/"
 IKS_SERVER_ID = 769572185005883393
 ADMIN_ROLES = []
 
+SEND_EMOJI = "📨"
+DISPATCH_COMMANDS = [
+    "%sdispatch" % COMMAND_PREFIX,
+    "%sDispatch" % COMMAND_PREFIX
+]
+
 description = "Dispatch Bot for IKS"
 intents = discord.Intents.default()
 #intents.members = True
@@ -134,7 +140,10 @@ def get_channel_names_from_ids(ctx, ids):
     return [ctx.guild.get_channel(channel_id).name for channel_id in ids]
 
 
-@bot.event
+def is_new(message):
+    return not any([r.emoji == SEND_EMOJI for r in message.reactions])
+
+
 async def on_ready():
     print('Logged in as')
     print(bot.user.name)
@@ -218,7 +227,7 @@ class PlayerCommands(DispatchBotCog):
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
             )
             if res is not None:
-                await ctx.send("Dispatch was send")
+                await ctx.message.add_reaction(SEND_EMOJI)
         except Exception as e:
             await ctx.send("There was an error sending your dispatch: %s" % str(e)[:1000])
 
@@ -542,6 +551,45 @@ class UmpireCommands(DispatchBotCog):
         except Exception as e:
             await ctx.send("There was an error ending the game:%s" % str(e)[:1000])
             raise
+
+    @commands.command()
+    async def check_for_new_messages(self, ctx):
+        """-> Check for undelivered messages. This is normally unnecessary but can help when the bot was down."""
+        try:
+            response = await self.call_url(
+                ctx,
+                "GET",
+                LIST_CHANNEL_PATH,
+                params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
+            )
+        except Exception as e:
+            await ctx.send("There was an getting channels: %s" % str(e)[:1000])
+            raise
+        for channel in [ctx.guild.get_channel(r["channel_id"]) for r in response]:
+            if channel:
+                await ctx.send("Checking channel {}".format(channel.name))
+                new_messages = 0
+                async for message in channel.history(limit=50):
+                    if message.content[:9] in DISPATCH_COMMANDS:
+                        if is_new(message):
+                            new_messages += 1
+                            try:
+                                data = {
+                                    "text": message.content.split(" ", 1)[1],
+                                    "sender": message.author.display_name
+                                }
+                            except IndexError as e:
+                                continue
+                            res = await self.call_url(
+                                ctx,
+                                "POST",
+                                POST_MESSAGE_PATH,
+                                data=data,
+                                params={"server_id": ctx.guild.id, "category_id": channel.category_id}
+                            )
+                            if res is not None:
+                                await message.add_reaction(SEND_EMOJI)
+                await ctx.send(" -> Found {} new messages".format(new_messages))
 
     @commands.command()
     async def umpire_time(self, ctx):
