@@ -43,6 +43,7 @@ IKS_SERVER_ID = 769572185005883393
 ADMIN_ROLES = []
 
 SEND_EMOJI = "📨"
+MESSAGE_HISTORY_LIMIT = 20
 DISPATCH_COMMANDS = [
     "%sdispatch" % COMMAND_PREFIX,
     "%sDispatch" % COMMAND_PREFIX
@@ -206,7 +207,7 @@ class PlayerCommands(DispatchBotCog):
 
     qualified_name = "Player Commands"
 
-    @commands.command()
+    @commands.command(aliases=["Dispatch"])
     async def dispatch(self, ctx):
         """-> Send everything in the same message as a dispatch"""
         try:
@@ -230,10 +231,6 @@ class PlayerCommands(DispatchBotCog):
                 await ctx.message.add_reaction(SEND_EMOJI)
         except Exception as e:
             await ctx.send("There was an error sending your dispatch: %s" % str(e)[:1000])
-
-    @commands.command()
-    async def Dispatch(self, ctx):
-        await self.dispatch(ctx)
 
     @commands.command()
     async def howto(self, ctx):
@@ -553,7 +550,7 @@ class UmpireCommands(DispatchBotCog):
             raise
 
     @commands.command()
-    async def check_for_new_messages(self, ctx):
+    async def check_for_missed_messages(self, ctx):
         """-> Check for undelivered messages. This is normally unnecessary but can help when the bot was down."""
         try:
             response = await self.call_url(
@@ -567,9 +564,9 @@ class UmpireCommands(DispatchBotCog):
             raise
         for channel in [ctx.guild.get_channel(r["channel_id"]) for r in response]:
             if channel:
-                await ctx.send("Checking channel {}".format(channel.name))
+                await ctx.send("Checking channel {} for missed messages".format(channel.name))
                 new_messages = 0
-                async for message in channel.history(limit=50):
+                async for message in channel.history(limit=MESSAGE_HISTORY_LIMIT):
                     if message.content[:9] in DISPATCH_COMMANDS:
                         if is_new(message):
                             new_messages += 1
@@ -589,7 +586,8 @@ class UmpireCommands(DispatchBotCog):
                             )
                             if res is not None:
                                 await message.add_reaction(SEND_EMOJI)
-                await ctx.send(" -> Found {} new messages".format(new_messages))
+                await ctx.send(" -> Found {} missed messages".format(new_messages))
+        await ctx.send("Finished checking for missed messages")
 
     @commands.command()
     async def umpire_time(self, ctx):
