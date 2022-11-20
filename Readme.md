@@ -22,7 +22,7 @@ The name will be used to identify your game in the further setup.
 ### Running one or more games per server
 The bot is able to handle multiple games per server.
 However, this will make the setup a bit more complicated for you as the umpire.
-For the players this will make no difference and during the game will also make no difference for the umpires.
+For the players this will make no difference and during the game it will also make no difference for the umpires.
 ### Adding categories
 It is assumed that you use discord categories to organize your game and that each category can only be part of one game. 
 This means you have to add categories to your game.
@@ -31,12 +31,12 @@ There are two ways to use this command:
  1. `!add_category <game_name>`: This will add the category you are typing in to the game called `game_name`.
  2. `!add_category <game_name> <category_name>`: This will add the category with the name `category_name` to the game called `game_name`. Note: Discord shows category names in caps even if the name is not in all caps.
 
-You need all categories in which you have player channels to the game.
+You need to add all categories in which you have player channels to the game.
 
 ### Adding channels
 Each channel that is a player channel where you want to send dispatches, needs to be added to the game.
 Channels will automatically be added to the game that their category has been added to.
-You do this by using the `!add_channel` command.
+You add channels to a game by using the `!add_channel` command.
 There are again two ways to use this command analogous to the `add_category` command:
  1. `!add_channel`: This will add the channel you are typing in to the game that it's category was assigned to.
  2. `!add_channel <channel_name>`: This will add the channel with the name `channel_name` to the game that it's category was assigned to.
@@ -55,5 +55,10 @@ With the `!list_channels` command you can list all the channels of the game that
 
 ### Running the game
 Once you have finished resolving a turn you can check in the backend (use `!url` to get the link) for messages that the players have sent.
-You can assign messages and turns where and when the messages should arrive and click the **Save** button.
+You can assign messages and turns where and when the messages should arrive, check the **approve** checkbox and click the **Save** button.
 After that let the dispatch bot know you want to move to the next turn by using the `!next_turn` command in a channel that is part of the game.
+
+### Renaming channels
+If you rename a channel during the game, the bot will still work (because it uses channel IDs under the hood),
+but in the umpire interface the channel name will still be the old name.
+To update it, you can add the channel to the game again.

@@ -172,7 +172,7 @@ class MiscCommands(DispatchBotCog):
     @commands.command()
     async def hello(self, ctx):
         """-> Say hello"""
-        await ctx.send("Hello, I am the TEST DispatchBot")
+        await ctx.send("Hello, I am the DispatchBot")
 
     @commands.command()
     async def get_round(self, ctx):
