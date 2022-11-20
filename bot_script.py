@@ -395,6 +395,9 @@ class UmpireCommands(DispatchBotCog):
 
     @commands.command()
     async def add_channel(self, ctx):
+        """-> Add one or more channels to a game. All other parameters are interpreted as channel names.""" \
+            """If you do not give any channel names, the channel, that you are typing in will be added.""" \
+            """Channels will be added to game the category they are in is part assigned to."""
         try:
             channels = get_channels_from_context(ctx)
         except AttributeError as e:
@@ -424,6 +427,8 @@ class UmpireCommands(DispatchBotCog):
 
     @commands.command()
     async def remove_channel(self, ctx):
+        """-> Remove one or more channels from a game. All parameters are interpreted as channel names. """ \
+            """If you do not give any channel names, the channel, that you are typing in will be removed."""
         try:
             channels = get_channel_ids_from_context(ctx)
         except ValueError as e:
@@ -451,6 +456,7 @@ class UmpireCommands(DispatchBotCog):
 
     @commands.command()
     async def list_channels(self, ctx):
+        """-> List all channels, that are part of the game."""
         try:
             response = await self.call_url(
                 ctx,
@@ -464,6 +470,8 @@ class UmpireCommands(DispatchBotCog):
         if response:
             channel_names = [channel["name"] for channel in response]
             await ctx.send("List of channels\n`    {}`".format("\n    ".join(channel_names)))
+        else:
+            await ctx.send("There are no channels in that game.")
 
     @commands.command()
     async def next_turn(self, ctx):
