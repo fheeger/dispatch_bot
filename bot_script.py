@@ -223,7 +223,7 @@ class PlayerCommands(DispatchBotCog):
         try:
             try:
                 data = {
-                    "text": ctx.message.content.split(" ", 1)[1],
+                    "text": ctx.message.content.split(None, 1)[1],
                     "sender": ctx.message.author.display_name
                 }
             except IndexError as e:
@@ -411,8 +411,8 @@ class UmpireCommands(DispatchBotCog):
 
     @commands.command()
     async def add_channel(self, ctx):
-        """-> Add one or more channels to a game. All other parameters are interpreted as channel names.""" \
-            """If you do not give any channel names, the channel, that you are typing in will be added.""" \
+        """-> Add one or more channels to a game. All other parameters are interpreted as channel names. """ \
+            """If you do not give any channel names, the channel, that you are typing in will be added. """ \
             """Channels will be added to game the category they are in is part assigned to."""
         try:
             channels = get_channels_from_context(ctx)
@@ -561,7 +561,7 @@ class UmpireCommands(DispatchBotCog):
 
     @commands.command()
     async def check_for_missed_messages(self, ctx):
-        """-> Check for undelivered messages. This is normally unnecessary but can help when the bot was down.""" \
+        """-> Check for undelivered messages. This is normally unnecessary but can help when the bot was down. """ \
             """Messages that are older than 3 days are ignored."""
         try:
             response = await self.call_url(
