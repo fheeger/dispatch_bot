@@ -151,6 +151,9 @@ class DispatchBotCog(commands.Cog):
             elif e.response.status_code == 400:
                 await ctx.send("Error finding your game: Multiple games found.\n"
                                "Make sure your categories are set up correctly.")
+            elif e.response.status_code == 403:
+                await ctx.send("You cannot start a game without creating and account first.\n"
+                               "Use the create_account command to do so.")
             elif e.response.status_code == 406:
                 await ctx.send("A game with the same name is already going on! Please choose another name")
             else:
@@ -162,7 +165,7 @@ class DispatchBotCog(commands.Cog):
             return backend.call(method, url_function, res_id, data, params)
         except HTTPError as e:
             if e.response.status_code == 406:
-                await ctx.send("A account with the same name is already going on! Please choose another name")
+                await ctx.send("ERROR: {}".format(e.response.text))
             else:
                 await ctx.send("There was an error calling the server: {}".format(str(e)[:1000]))
             raise e
@@ -295,7 +298,7 @@ class UmpireCommands(DispatchBotCog):
             "name_game": name,
             "server_id": ctx.guild.id,
             "user_id": 0,
-            "discord_user_id_has": user_hash(ctx)
+            "discord_user_id_hash": user_hash(ctx)
         }
 
         try:
