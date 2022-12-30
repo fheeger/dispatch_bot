@@ -64,8 +64,6 @@ bot = commands.Bot(command_prefix=COMMAND_PREFIX,
                    description=description,
                    intents=intents
                    )
-turn = 1
-
 
 def collect_channels(guild):
     channels = {}
@@ -143,7 +141,7 @@ backend = BackendClient(BASE_URL)
 
 
 class DispatchBotCog(commands.Cog):
-    async def call_url(self, ctx, method, url_function, res_id=None, data=None, params=None):
+    async def call_game_url(self, ctx, method, url_function, res_id=None, data=None, params=None):
         try:
             return backend.call(method, url_function, res_id, data, params)
         except HTTPError as e:
@@ -155,6 +153,16 @@ class DispatchBotCog(commands.Cog):
                                "Make sure your categories are set up correctly.")
             elif e.response.status_code == 406:
                 await ctx.send("A game with the same name is already going on! Please choose another name")
+            else:
+                await ctx.send("There was an error calling the server: {}".format(str(e)[:1000]))
+            raise e
+
+    async def call_account_url(self, ctx, method, url_function, res_id=None, data=None, params=None):
+        try:
+            return backend.call(method, url_function, res_id, data, params)
+        except HTTPError as e:
+            if e.response.status_code == 406:
+                await ctx.send("A account with the same name is already going on! Please choose another name")
             else:
                 await ctx.send("There was an error calling the server: {}".format(str(e)[:1000]))
             raise e
@@ -174,7 +182,7 @@ class MiscCommands(DispatchBotCog):
     async def get_round(self, ctx):
         """-> get current round"""
         try:
-            res = await self.call_url(
+            res = await self.call_game_url(
                 ctx,
                 "GET",
                 GET_ROUND_PATH,
@@ -207,7 +215,7 @@ class PlayerCommands(DispatchBotCog):
                 "text": command.args[0],
                 "sender": ctx.message.author.display_name
             }
-            res = await self.call_url(
+            res = await self.call_game_url(
                 ctx,
                 "POST",
                 POST_MESSAGE_PATH,
@@ -239,17 +247,18 @@ class UmpireCommands(DispatchBotCog):
             await ctx.send("You have to give a username you want to use to login to the umpire interface.")
             return
         username = command.args[0]
-        res = await self.call_url(
+        res = await self.call_account_url(
             ctx,
             "POST",
             CREATE_USER_PATH,
             data={"username": username, "discord_user_id_hash": user_hash(ctx)}
         )
-        ctx.author.send(
+        await ctx.send("Account created. Your password will be send to you by DM.")
+        await ctx.author.send(
             """A dispatch bot umpire interface account for you has been created. 
             
-            You can login at {}
-            "Your username is {}. Your password is {}.
+            You can login at {}/admin
+            Your username is {}. Your password is {} .
             
             You should change your password once you have logged in for the first time.""".format(
                 BASE_URL,
@@ -291,8 +300,8 @@ class UmpireCommands(DispatchBotCog):
 
         try:
             if is_iks:
-                #is there a game already
-                turn_res = await self.call_url(
+                # is there a game already
+                turn_res = await self.call_game_url(
                     ctx,
                     "GET",
                     GET_ROUND_PATH,
@@ -301,16 +310,16 @@ class UmpireCommands(DispatchBotCog):
                 if turn_res['turn'] is not None:
                     await ctx.send("There is already a game running. IKS main server can only run one game at a time.")
                     return
-            game_res = await self.call_url(ctx, "POST", NEW_GAME_PATH, data=data)
+            game_res = await self.call_game_url(ctx, "POST", NEW_GAME_PATH, data=data)
             if is_iks:
-                cat_res = await self.call_url(
+                cat_res = await self.call_game_url(
                     ctx,
                     "PATCH",
                     "{}{}/".format(ADD_CATEGORY_PATH, name),
                     data={"category": category_ids},
                     params={"server_id": IKS_SERVER_ID}
                 )
-                chnl_res = await self.call_url(
+                chnl_res = await self.call_game_url(
                     ctx,
                     "PATCH",
                     UPDATE_CHANNELS_PATH,
@@ -353,17 +362,14 @@ class UmpireCommands(DispatchBotCog):
             await ctx.send(str(e))
             return
         try:
-            res = await self.call_url(
+            res = await self.call_game_url(
                 ctx,
                 "PATCH",
                 "{}{}/".format(ADD_CATEGORY_PATH, game_name),
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
             )
-            if 'error' in res:
-                await ctx.send(res['error'])
-            else:
-                await ctx.send("{:n} categories added to game {}".format(len(category_ids), game_name))
+            await ctx.send("{:n} categories added to game {}".format(len(category_ids), game_name))
         except Exception as e:
             await ctx.send("There was an error adding the categories: %s" % str(e)[:1000])
             raise
@@ -393,17 +399,14 @@ class UmpireCommands(DispatchBotCog):
             return
 
         try:
-            res = await self.call_url(
+            res = await self.call_game_url(
                 ctx,
                 "PATCH",
                 "{}{}/".format(REMOVE_CATEGORY_PATH, game_name),
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
             )
-            if 'error' in res:
-                await ctx.send(res['error'])
-            else:
-                await ctx.send("{:n} categories removed from game {}".format(len(category_ids), game_name))
+            await ctx.send("{:n} categories removed from game {}".format(len(category_ids), game_name))
         except Exception as e:
             await ctx.send("There was an error removing the categories: %s" % str(e)[:1000])
             raise
@@ -419,7 +422,7 @@ class UmpireCommands(DispatchBotCog):
             return
         game_name = command.args[0]
         try:
-            category_ids = await self.call_url(
+            category_ids = await self.call_game_url(
                 ctx,
                 "GET",
                 "{}{}/".format(LIST_CATEGORIES_PATH, game_name),
@@ -456,7 +459,7 @@ class UmpireCommands(DispatchBotCog):
             await ctx.send(str(e))
             return
         try:
-            answer = await self.call_url(
+            answer = await self.call_game_url(
                 ctx,
                 "PATCH",
                 UPDATE_CHANNELS_PATH,
@@ -494,7 +497,7 @@ class UmpireCommands(DispatchBotCog):
             await ctx.send(str(e))
             return
         try:
-            answer = await self.call_url(
+            answer = await self.call_game_url(
                 ctx,
                 "PATCH",
                 REMOVE_CHANNEL_PATH,
@@ -517,7 +520,7 @@ class UmpireCommands(DispatchBotCog):
     async def list_channels(self, ctx):
         """-> List all channels, that are part of the game."""
         try:
-            response = await self.call_url(
+            response = await self.call_game_url(
                 ctx,
                 "GET",
                 LIST_CHANNEL_PATH,
@@ -536,7 +539,7 @@ class UmpireCommands(DispatchBotCog):
     async def next_turn(self, ctx):
         """-> Go to the next turn and deliver all messages for it."""
         try:
-            messages = await self.call_url(
+            messages = await self.call_game_url(
                 ctx,
                 "GET",
                 CHECK_MESSAGES_PATH,
@@ -549,21 +552,18 @@ class UmpireCommands(DispatchBotCog):
             await ctx.send("There was an error checking the messages:%s" % str(e)[:1000])
             raise
         try:
-            res = await self.call_url(
+            res = await self.call_game_url(
                 ctx,
                 "PATCH",
                 NEXT_TURN_PATH,
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
             )
-            if 'error' in res:
-                await ctx.send("Cannot start the next turn. "+ res['error'])
-            else:
-                await ctx.send("Next turn started. This is turn {turn}, time is now {current_time}".format(**res))
+            await ctx.send("Next turn started. This is turn {turn}, time is now {current_time}".format(**res))
         except Exception as e:
             await ctx.send("There was an error advancing the turn:%s" % str(e)[:1000])
             raise
         try:
-            messages = await self.call_url(
+            messages = await self.call_game_url(
                 ctx,
                 "GET",
                 GET_MESSAGES_PATH,
@@ -588,7 +588,7 @@ class UmpireCommands(DispatchBotCog):
     async def end_game(self, ctx):
         """-> End current game"""
         try:
-            res = await self.call_url(
+            res = await self.call_game_url(
                 ctx,
                 "PATCH",
                 END_GAME,
@@ -607,7 +607,7 @@ class UmpireCommands(DispatchBotCog):
         """-> Check for undelivered messages. This is normally unnecessary but can help when the bot was down. """ \
             """Messages that are older than 3 days are ignored."""
         try:
-            response = await self.call_url(
+            response = await self.call_game_url(
                 ctx,
                 "GET",
                 LIST_CHANNEL_PATH,
@@ -631,7 +631,7 @@ class UmpireCommands(DispatchBotCog):
                                 }
                             except IndexError as e:
                                 continue
-                            res = await self.call_url(
+                            res = await self.call_game_url(
                                 ctx,
                                 "POST",
                                 POST_MESSAGE_PATH,
