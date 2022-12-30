@@ -29,7 +29,7 @@ RED_CATEGORY = "Red"
 BLUE_CATEGORY = "Blue"
 
 BASE_URL = os.environ.get("BASE_URL", "https://django-dispatch-bot.herokuapp.com/")
-CREATE_USER_PATH = "bot/create_user"
+CREATE_USER_PATH = "bot/new_user/"
 NEW_GAME_PATH = "bot/new_game/"
 GET_ROUND_PATH = "bot/get_round/"
 NEXT_TURN_PATH = "bot/next_turn/"
