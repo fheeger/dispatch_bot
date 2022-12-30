@@ -1,5 +1,6 @@
 import datetime
 import re
+import hashlib
 
 import discord
 from discord import ChannelType
@@ -11,6 +12,8 @@ import os
 from BackendClient import BackendClient
 
 # read token
+from Command import Command, NotEnoughArgumentsError
+
 TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
 COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX", "!")
 if os.path.exists(".env"):
@@ -26,6 +29,7 @@ RED_CATEGORY = "Red"
 BLUE_CATEGORY = "Blue"
 
 BASE_URL = os.environ.get("BASE_URL", "https://django-dispatch-bot.herokuapp.com/")
+CREATE_USER_PATH = "bot/create_user"
 NEW_GAME_PATH = "bot/new_game/"
 GET_ROUND_PATH = "bot/get_round/"
 NEXT_TURN_PATH = "bot/next_turn/"
@@ -63,9 +67,9 @@ bot = commands.Bot(command_prefix=COMMAND_PREFIX,
 turn = 1
 
 
-def collect_channels(ctx):
+def collect_channels(guild):
     channels = {}
-    for entry in ctx.guild.channels:
+    for entry in guild.channels:
         if entry.type == ChannelType.category:
             if entry.name in [RED_CATEGORY, BLUE_CATEGORY]:
                 for channel in entry.text_channels:
@@ -89,7 +93,7 @@ async def deliver(srv, message):
 
 
 async def broadcast(ctx, message):
-    for channel in collect_channels(ctx).values():
+    for channel in collect_channels(ctx.guild).values():
         await channel.send(message)
 
 
@@ -103,44 +107,16 @@ def get_category_ids(ctx, category_names):
     return category_ids
 
 
-def get_category_ids_from_context(ctx):
-    command_array = ctx.message.content.split(" ")
-    if len(command_array) > 2:
-        return get_category_ids(ctx, command_array[2:])
-    elif ctx.channel.category_id is None:
-        raise ValueError("No names given in message and channel has no category")
-    else:
-        return [ctx.channel.category_id]
-
-
 def get_category_names_from_ids(server, ids):
     return [server.get_channel(channel_id['number']).name for channel_id in ids]
 
 
-def get_channel_ids_from_context(ctx):
-    command_array = ctx.message.content.split(" ")
-    if len(command_array) > 1:
-        return {"channels": [get_channel_by_name(ctx.guild, name).id for name in command_array[1:]]}
-    else:
-        return {"channels": [ctx.channel.id]}
-
-
-def get_channels_from_context(ctx):
-    command_array = ctx.message.content.split(" ")
-    channels = {}
-    for name in command_array[1:]:
-        channel = get_channel_by_name(ctx.guild, name)
-        if channel is None:
-            raise AttributeError("Did not find channel with name: {}".format(name))
-        channels[channel.id] = name
-    if len(command_array) > 1:
-        return {"channels": channels}
-    else:
-        return {"channels": {ctx.channel.id: ctx.channel.name}}
-
-
 def get_channel_names_from_ids(ctx, ids):
     return [ctx.guild.get_channel(channel_id).name for channel_id in ids]
+
+
+def user_hash(ctx):
+    return hashlib.sha256(str(ctx.author.id).encode()).hexdigest()
 
 
 def is_new(message):
@@ -222,14 +198,15 @@ class PlayerCommands(DispatchBotCog):
         """-> Send everything in the same message as a dispatch"""
         try:
             try:
-                data = {
-                    "text": ctx.message.content.split(None, 1)[1],
-                    "sender": ctx.message.author.display_name
-                }
-            except IndexError as e:
+                command = Command(ctx, 1)
+            except NotEnoughArgumentsError as e:
                 await ctx.send("Your command did not contain any content.\n"
                                "Write !dispatch followed by the content of your dispatch in the same discord message.")
                 return
+            data = {
+                "text": command.args[0],
+                "sender": ctx.message.author.display_name
+            }
             res = await self.call_url(
                 ctx,
                 "POST",
@@ -248,19 +225,48 @@ class PlayerCommands(DispatchBotCog):
         message = open("data/howto_player.txt", "rt").read()
         await ctx.send(message)
 
-
 class UmpireCommands(DispatchBotCog):
     """Umpire Commands"""
 
     qualified_name = "Umpire Commands"
 
     @commands.command()
+    async def create_account(self, ctx):
+        """-> Create an account in umpire interface"""
+        try:
+            command = Command(ctx, 1)
+        except NotEnoughArgumentsError:
+            await ctx.send("You have to give a username you want to use to login to the umpire interface.")
+            return
+        username = command.args[0]
+        res = await self.call_url(
+            ctx,
+            "POST",
+            CREATE_USER_PATH,
+            data={"username": username, "discord_user_id_hash": user_hash(ctx)}
+        )
+        ctx.author.send(
+            """A dispatch bot umpire interface account for you has been created. 
+            
+            You can login at {}
+            "Your username is {}. Your password is {}.
+            
+            You should change your password once you have logged in for the first time.""".format(
+                BASE_URL,
+                username,
+                res["password"]
+            )
+        )
+
+    @commands.command()
     async def start_game(self, ctx):
         """-> Start a new game. The first parameter will be the name of your game."""
-        if ctx.message.content.count(" ") < 1:
+        try:
+            command = Command(ctx, 1)
+        except NotEnoughArgumentsError:
             await ctx.send("You must give a name for your game.")
             return
-        name = ctx.message.content.split(" ", 1)[1]
+        name = command.args[0]
         if not re.fullmatch("[0-9A-Za-z-_~]+", name):
             await ctx.send("Your game name can include no spaces and only the following characters: 0-9A-Za-z-_~ .")
             return
@@ -268,7 +274,7 @@ class UmpireCommands(DispatchBotCog):
         # special case for IKS main server where Red and Blue channels are always added.
         is_iks = ctx.guild.id == IKS_SERVER_ID
         if is_iks:
-            channels = {c.id: c.name for c in collect_channels(ctx).values()}
+            channels = {c.id: c.name for c in collect_channels(ctx.guild).values()}
             category_ids = [882564486572167188, 882564565894844426]
         else:
             channels = {}
@@ -279,7 +285,8 @@ class UmpireCommands(DispatchBotCog):
             "channels": {},
             "name_game": name,
             "server_id": ctx.guild.id,
-            "user_id": ctx.author.id,
+            "user_id": 0,
+            "discord_user_id_has": user_hash(ctx)
         }
 
         try:
@@ -329,12 +336,19 @@ class UmpireCommands(DispatchBotCog):
             """interpreted as category names (remember that discord shows category names in caps even if the are """ \
             """not). If you do not give any category names, the category, that contains the channel you are typing """\
             """in will be added."""
-        if ctx.message.content.count(" ") < 1:
+        try:
+            command = Command(ctx, 1, arg_num_unlimited=True)
+        except NotEnoughArgumentsError:
             await ctx.send("You have to give the name of a game the category should be added to.")
             return
-        game_name = ctx.message.content.split(" ", 2)[1]
+        game_name = command.args[0]
         try:
-            category_ids = get_category_ids_from_context(ctx)
+            if command.arg_num > 1:
+                category_ids = get_category_ids(ctx, command.args[1:])
+            elif ctx.channel.category_id is None:
+                raise ValueError("No names given in message and channel has no category")
+            else:
+                category_ids = [ctx.channel.category_id]
         except ValueError as e:
             await ctx.send(str(e))
             return
@@ -361,12 +375,19 @@ class UmpireCommands(DispatchBotCog):
             """are interpreted as category names (remember that discord shows category names in caps even if the """ \
             """are not). If you do not give any category names, the category, that contains the channel you are """ \
             """typing in will be removed."""
-        if ctx.message.content.count(" ") < 1:
+        try:
+            command = Command(ctx, 1, arg_num_unlimited=True)
+        except NotEnoughArgumentsError:
             await ctx.send("You have to give the name of a game the category should be removed from.")
             return
-        game_name = ctx.message.content.split(" ", 2)[1]
+        game_name = command.args[0]
         try:
-            category_ids = get_category_ids_from_context(ctx)
+            if command.arg_num > 1:
+                category_ids = get_category_ids(ctx, command.args[1:])
+            elif ctx.channel.category_id is None:
+                raise ValueError("No names given in message and channel has no category")
+            else:
+                category_ids = [ctx.channel.category_id]
         except ValueError as e:
             await ctx.send(str(e))
             return
@@ -391,10 +412,12 @@ class UmpireCommands(DispatchBotCog):
     @commands.command()
     async def list_categories(self, ctx):
         """-> List all categories, that are part of the game."""
-        if ctx.message.content.count(" ") < 1:
+        try:
+            command = Command(ctx, 1)
+        except NotEnoughArgumentsError:
             await ctx.send("You have to give the name of a game to get the list of categories.")
             return
-        game_name = ctx.message.content.split(" ", 2)[1]
+        game_name = command.args[0]
         try:
             category_ids = await self.call_url(
                 ctx,
@@ -413,9 +436,19 @@ class UmpireCommands(DispatchBotCog):
     async def add_channel(self, ctx):
         """-> Add one or more channels to a game. All other parameters are interpreted as channel names. """ \
             """If you do not give any channel names, the channel, that you are typing in will be added. """ \
-            """Channels will be added to game the category they are in is part assigned to."""
+            """Channels will be added to game the category they are in is assigned to."""
+        command = Command(ctx, 0, arg_num_unlimited=True)
         try:
-            channels = get_channels_from_context(ctx)
+            channels = {}
+            for name in command.args:
+                channel = get_channel_by_name(ctx.guild, name)
+                if channel is None:
+                    raise AttributeError("Did not find channel with name: {}".format(name))
+                channels[channel.id] = name
+            if command.arg_num > 0:
+                data = {"channels": channels}
+            else:
+                data = {"channels": {ctx.channel.id: ctx.channel.name}}
         except AttributeError as e:
             await ctx.send(e.args[0])
             return
@@ -427,7 +460,7 @@ class UmpireCommands(DispatchBotCog):
                 ctx,
                 "PATCH",
                 UPDATE_CHANNELS_PATH,
-                data=channels,
+                data=data,
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
             )
             if answer:
@@ -445,8 +478,18 @@ class UmpireCommands(DispatchBotCog):
     async def remove_channel(self, ctx):
         """-> Remove one or more channels from a game. All parameters are interpreted as channel names. """ \
             """If you do not give any channel names, the channel, that you are typing in will be removed."""
+        command = Command(ctx, 0, arg_num_unlimited=True)
         try:
-            channels = get_channel_ids_from_context(ctx)
+            channels = {}
+            for name in command.args:
+                channel = get_channel_by_name(ctx.guild, name)
+                if channel is None:
+                    raise AttributeError("Did not find channel with name: {}".format(name))
+                channels[channel.id] = name
+            if command.arg_num > 1:
+                data = {"channels": channels}
+            else:
+                data = {"channels": {ctx.channel.id: ctx.channel.name}}
         except ValueError as e:
             await ctx.send(str(e))
             return
@@ -455,7 +498,7 @@ class UmpireCommands(DispatchBotCog):
                 ctx,
                 "PATCH",
                 REMOVE_CHANNEL_PATH,
-                data=channels,
+                data=data,
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
             )
             if answer:
