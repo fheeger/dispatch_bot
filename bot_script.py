@@ -64,8 +64,6 @@ bot = commands.Bot(command_prefix=COMMAND_PREFIX,
                    description=description,
                    intents=intents
                    )
-turn = 1
-
 
 def collect_channels(guild):
     channels = {}
@@ -255,6 +253,7 @@ class UmpireCommands(DispatchBotCog):
             CREATE_USER_PATH,
             data={"username": username, "discord_user_id_hash": user_hash(ctx)}
         )
+        await ctx.send("Account created. Your password will be send to you by DM.")
         await ctx.author.send(
             """A dispatch bot umpire interface account for you has been created. 
             
@@ -370,10 +369,7 @@ class UmpireCommands(DispatchBotCog):
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
             )
-            if 'error' in res:
-                await ctx.send(res['error'])
-            else:
-                await ctx.send("{:n} categories added to game {}".format(len(category_ids), game_name))
+            await ctx.send("{:n} categories added to game {}".format(len(category_ids), game_name))
         except Exception as e:
             await ctx.send("There was an error adding the categories: %s" % str(e)[:1000])
             raise
@@ -410,10 +406,7 @@ class UmpireCommands(DispatchBotCog):
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
             )
-            if 'error' in res:
-                await ctx.send(res['error'])
-            else:
-                await ctx.send("{:n} categories removed from game {}".format(len(category_ids), game_name))
+            await ctx.send("{:n} categories removed from game {}".format(len(category_ids), game_name))
         except Exception as e:
             await ctx.send("There was an error removing the categories: %s" % str(e)[:1000])
             raise
@@ -565,10 +558,7 @@ class UmpireCommands(DispatchBotCog):
                 NEXT_TURN_PATH,
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
             )
-            if 'error' in res:
-                await ctx.send("Cannot start the next turn. "+ res['error'])
-            else:
-                await ctx.send("Next turn started. This is turn {turn}, time is now {current_time}".format(**res))
+            await ctx.send("Next turn started. This is turn {turn}, time is now {current_time}".format(**res))
         except Exception as e:
             await ctx.send("There was an error advancing the turn:%s" % str(e)[:1000])
             raise
