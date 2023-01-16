@@ -84,7 +84,7 @@ def get_channel_by_name(srv, name):
 
 async def deliver(srv, message):
     dispatch_text = "Dispatch from %s:\n>>> %s" % (message["sender"], message["text"])
-    channel = get_channel_by_name(srv, message["channelName"])
+    channel = srv.get_channel(message["channelId"])
     if channel is None:
         raise ValueError("Can not find channel {}".format(message["channelName"]))
     await channel.send(dispatch_text)
@@ -209,7 +209,7 @@ class PlayerCommands(DispatchBotCog):
         """-> Send everything in the same message as a dispatch"""
         try:
             try:
-                command = Command(ctx, 1)
+                command = Command(ctx, 0)
             except NotEnoughArgumentsError as e:
                 await ctx.send("Your command did not contain any content.\n"
                                "Write !dispatch followed by the content of your dispatch in the same discord message.")
