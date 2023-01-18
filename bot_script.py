@@ -317,14 +317,14 @@ class UmpireCommands(DispatchBotCog):
             if is_iks:
                 cat_res = await self.call_game_url(
                     ctx,
-                    "PATCH",
+                    "POST",
                     "{}{}/".format(ADD_CATEGORY_PATH, name),
                     data={"category": category_ids},
                     params={"server_id": IKS_SERVER_ID}
                 )
                 chnl_res = await self.call_game_url(
                     ctx,
-                    "PATCH",
+                    "POST",
                     UPDATE_CHANNELS_PATH,
                     data={"channels": channels},
                     params={"server_id": IKS_SERVER_ID})
@@ -367,7 +367,7 @@ class UmpireCommands(DispatchBotCog):
         try:
             res = await self.call_game_url(
                 ctx,
-                "PATCH",
+                "POST",
                 "{}{}/".format(ADD_CATEGORY_PATH, game_name),
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
@@ -404,7 +404,7 @@ class UmpireCommands(DispatchBotCog):
         try:
             res = await self.call_game_url(
                 ctx,
-                "PATCH",
+                "POST",
                 "{}{}/".format(REMOVE_CATEGORY_PATH, game_name),
                 data={"category": category_ids},
                 params={"server_id": ctx.guild.id}
@@ -464,7 +464,7 @@ class UmpireCommands(DispatchBotCog):
         try:
             answer = await self.call_game_url(
                 ctx,
-                "PATCH",
+                "POST",
                 UPDATE_CHANNELS_PATH,
                 data=data,
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
@@ -502,7 +502,7 @@ class UmpireCommands(DispatchBotCog):
         try:
             answer = await self.call_game_url(
                 ctx,
-                "PATCH",
+                "POST",
                 REMOVE_CHANNEL_PATH,
                 data=data,
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
@@ -557,7 +557,7 @@ class UmpireCommands(DispatchBotCog):
         try:
             res = await self.call_game_url(
                 ctx,
-                "PATCH",
+                "POST",
                 NEXT_TURN_PATH,
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
             )
@@ -593,7 +593,7 @@ class UmpireCommands(DispatchBotCog):
         try:
             res = await self.call_game_url(
                 ctx,
-                "PATCH",
+                "POST",
                 END_GAME,
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
             )
