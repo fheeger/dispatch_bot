@@ -21,12 +21,13 @@ Once the umpire starts the next turn all dispatches that are due to be delivered
 ### Adding the bot to your server
 Use the [discord invite link](https://discord.com/api/oauth2/authorize?client_id=897838744458108958&permissions=3072&scope=bot) to add the bot to your game server.
 ### Creating an Account
-To acces the umpire interface thorugh your web browser you will need an account. 
-You can creat one by typing `!creat_account <account name>`, where `account_name` is the name you want to use to login.
+To access the umpire interface through your web browser you will need an account. 
+You can create one by typing `!creat_account <account name>`, where `<account_name>` is the name you want to use to login.
+E.g. `!creat_account felix`
 The bot will send you a DM with your password.
 ### Starting a game
 With the `!start_game <game_name>` command you can start a new game.
-The `<game_name>` should be replaced with the name of your game.
+The `<game_name>` should be replaced with the name of your game e.g. `!start_game Austerlitz`.
 The name will be used to identify your game in the further setup.
 ### Running one or more games per server
 The bot is able to handle multiple games per server.
