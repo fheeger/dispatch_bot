@@ -90,11 +90,6 @@ async def deliver(srv, message):
     await channel.send(dispatch_text)
 
 
-async def broadcast(ctx, message):
-    for channel in collect_channels(ctx.guild).values():
-        await channel.send(message)
-
-
 def get_category_ids(ctx, category_names):
     category_ids = []
     for name in category_names:
@@ -110,7 +105,7 @@ def get_category_names_from_ids(server, ids):
 
 
 def get_channel_names_from_ids(ctx, ids):
-    return [ctx.guild.get_channel(channel_id).name for channel_id in ids]
+    return [ctx.guild.get_channel(int(channel_id)).name for channel_id in ids]
 
 
 def user_hash(ctx):
@@ -508,7 +503,7 @@ class UmpireCommands(DispatchBotCog):
                 params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
             )
             if answer:
-                channel_names = get_channel_names_from_ids(ctx, answer["channels"])
+                channel_names = get_channel_names_from_ids(ctx, answer["channels"].keys())
                 await ctx.send(
                     "The following channels were removed from game `{}`: {}".format(
                         answer["game"],
@@ -646,19 +641,46 @@ class UmpireCommands(DispatchBotCog):
                 await ctx.send(" -> Found {} missed messages".format(new_messages))
         await ctx.send("Finished checking for missed messages")
 
-    @commands.command()
-    async def umpire_time(self, ctx):
-        """-> Announce to all player channels that it is umpire time now."""
-        message = "**Umpire time has begun**\n" + \
-                  "You can not give any more orders until next turn, but you can still write dispatches."
-        await broadcast(ctx, message)
-        await ctx.send("Umpire time announcement was send")
+    # @commands.command()
+    # async def umpire_time(self, ctx):
+    #     """-> Announce to all player channels that it is umpire time now."""
+    #     message = "**Umpire time has begun**\n" + \
+    #               "You can not give any more orders until next turn, but you can still write dispatches."
+    #     await self.broadcast(ctx)
+    #     await ctx.send("Umpire time announcement was send")
 
     @commands.command()
     async def broadcast(self, ctx):
         """-> Send a message to all player channels."""
-        await broadcast(ctx, ctx.message.content.split(" ", 1)[1])
-        await ctx.send("Broadcast was send")
+        message = ctx.message.content.split(" ", 1)[1]
+
+        try:
+            response = await self.call_game_url(
+                ctx,
+                "GET",
+                LIST_CHANNEL_PATH,
+                params={"server_id": ctx.guild.id, "category_id": ctx.channel.category_id}
+            )
+        except Exception as e:
+            await ctx.send("There was an error getting channels: %s" % str(e)[:1000])
+            raise
+        send = 0
+        for r in response:
+            channel = ctx.guild.get_channel(r["channel_id"])
+            if channel:
+                try:
+                    await channel.send(message)
+                    send += 1
+                except Exception as e:
+                    await ctx.send(
+                        "There was an error sending broadcast message to %s: %s" % (r["channel_id"], str(e)[:1000])
+                    )
+                    raise
+            else:
+                await ctx.send(
+                    "There was an error sending broadcast message to %s: Could not find channel" % r["channel_id"]
+                )
+        await ctx.send("Broad cast send to %i/%i channels." % (send, len(response)))
 
     @commands.command()
     async def url(self, ctx):
