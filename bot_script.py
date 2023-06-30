@@ -256,7 +256,7 @@ class UmpireCommands(DispatchBotCog):
             """A dispatch bot umpire interface account for you has been created. 
             
             You can login at {}admin
-            Your username is {}. Your password is {} .
+            Your username is {}. Your password is ||{}|| .
             
             You should change your password once you have logged in for the first time.""".format(
                 BASE_URL,
