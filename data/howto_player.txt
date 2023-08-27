@@ -2,7 +2,7 @@
 
 When you want to send a message, use the syntax:
 
-``` !dispatch
+```%sdispatch
 The content of your dispatch```
 
 A good format for the content of your dispatch could be
@@ -12,6 +12,6 @@ From: Character Name you are playing
 Time: Time you're sending this
 Location: Where you are
 
-The content of you message````
+The content of you message```
 
-When the turn ticks over, the umpires will review all messages sent and note when (and if) they will arrive at their destinations. If you’re going to receive messages in the new turn, they will land in your channel about the same time as your screenshot and umpire update.
+When the turn ticks over, the umpires will review all messages sent and note when (and if) they will arrive at their destinations. If you're going to receive messages in the new turn, they will land in your channel about the same time as your screenshot and umpire update.
