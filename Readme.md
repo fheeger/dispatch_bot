@@ -19,7 +19,7 @@ Players can send dispatches by using the `!dispatch` command.
 The messages will show up in the backend where the umpire(s) have to decide to which channel it will be delivered in which turn (or if it will get lost).
 Once the umpire starts the next turn all dispatches that are due to be delivered that turn are send to the player channels.
 ### Adding the bot to your server
-Use the [discord invite link](https://discord.com/api/oauth2/authorize?client_id=897838744458108958&permissions=3072&scope=bot) to add the bot to your game server.
+Use the [discord invite link]([https://discord.com/api/oauth2/authorize?client_id=897838744458108958&permissions=3072&scope=bot](https://discord.com/oauth2/authorize?client_id=992729518089441340&permissions=67648&scope=bot)) to add the bot to your game server.
 ### Creating an Account
 To access the umpire interface through your web browser you will need an account. 
 You can create one by typing `!creat_account <account name>`, where `<account_name>` is the name you want to use to login.
