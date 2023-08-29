@@ -17,14 +17,37 @@ from MiscCommands import MiscCommands
 def read_env_file():
     env = {}
     if os.path.exists(".env"):
+        print(".env file found")
+        line_nr = 0
         for line in open(".env"):
+            if line[0] == "#":
+                continue
+            line_nr += 1
             key, value = line.strip().split("=")
             env[key] = value
+        print("read %i lines from .env file" % line_nr)
     return env
 
 
+def load_var_from_system(name, default):
+    print("loading variable %s from system environment" % name)
+    var = os.environ.get(name)
+    if var is None:
+        print("variable %s not found in system env" % name)
+        if default is None:
+            raise RuntimeError("%s is not set in .env or as environment variable" % name)
+        else:
+            print("defaulting to %s for variable %s" % (default, name))
+            return default
+    else:
+        return var
+
+
 def load_conf_var(name, env, default=None):
-    return env.get(name, os.environ.get(name, default))
+    var = env.get(name, None)
+    if var is None:
+        return load_var_from_system(name, default)
+    return var
 
 
 class Config:
@@ -61,12 +84,8 @@ class Config:
     def __init__(self):
         env = read_env_file()
 
-        self.TOKEN = load_conf_var("DISCORD_BOT_TOKEN", env)
-        if self.TOKEN is None:
-            raise RuntimeError("TOKEN is not set in .env or as environment variable")
+        self.TOKEN = load_conf_var("TOKEN", env)
         self.BASE_URL = load_conf_var("BASE_URL", env)
-        if self.BASE_URL is None:
-            raise RuntimeError("BASE_URL is not set in .env or as environment variable")
         self.COMMAND_PREFIX = load_conf_var("COMMAND_PREFIX", env, self.COMMAND_PREFIX)
 
         self.DISPATCH_COMMANDS = [
