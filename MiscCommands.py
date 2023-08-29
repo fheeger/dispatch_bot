@@ -17,7 +17,7 @@ class MiscCommands(DispatchBotCog):
         """-> Say hello"""
         await ctx.send("Hello, I am the DispatchBot")
 
-    @commands.command()
+    #@commands.command()
     async def get_round(self, ctx):
         """-> get current round"""
         try:

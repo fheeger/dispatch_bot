@@ -14,11 +14,23 @@ from UmpireCommands import UmpireCommands
 from MiscCommands import MiscCommands
 
 
+def read_env_file():
+    env = {}
+    if os.path.exists(".env"):
+        for line in open(".env"):
+            key, value = line.strip().split("=")
+            env[key] = value
+    return env
+
+
+def load_conf_var(name, env, default=None):
+    return env.get(name, os.environ.get(name, default))
+
+
 class Config:
     RED_CATEGORY = "Red"
     BLUE_CATEGORY = "Blue"
 
-    BASE_URL = os.environ.get("BASE_URL", "https://django-dispatch-bot.herokuapp.com/")
     CREATE_USER_PATH = "bot/new_user/"
     NEW_GAME_PATH = "bot/new_game/"
     GET_ROUND_PATH = "bot/get_round/"
@@ -41,22 +53,26 @@ class Config:
     MESSAGE_HISTORY_LIMIT = 20
     MISSED_MESSAGE_AGE_LIMIT = datetime.timedelta(days=3)
 
-    TOKEN = os.environ.get("DISCORD_BOT_TOKEN")
-    COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX", "!")
-
-    DISPATCH_COMMANDS = [
-        "%sdispatch" % COMMAND_PREFIX,
-        "%sDispatch" % COMMAND_PREFIX
-    ]
+    TOKEN = None
+    BASE_URL = None
+    COMMAND_PREFIX = "!"
+    DISPATCH_COMMANDS = None
 
     def __init__(self):
-        if os.path.exists(".env"):
-            for line in open(".env"):
-                key, value = line.strip().split("=")
-                if self.TOKEN is None and key == "DISCORD_BOT_TOKEN":
-                    self.TOKEN = value
-                if key == "COMMAND_PREFIX":
-                    self.COMMAND_PREFIX = value
+        env = read_env_file()
+
+        self.TOKEN = load_conf_var("DISCORD_BOT_TOKEN", env)
+        if self.TOKEN is None:
+            raise RuntimeError("TOKEN is not set in .env or as environment variable")
+        self.BASE_URL = load_conf_var("BASE_URL", env)
+        if self.BASE_URL is None:
+            raise RuntimeError("BASE_URL is not set in .env or as environment variable")
+        self.COMMAND_PREFIX = load_conf_var("COMMAND_PREFIX", env, self.COMMAND_PREFIX)
+
+        self.DISPATCH_COMMANDS = [
+            "%sdispatch" % self.COMMAND_PREFIX,
+            "%sDispatch" % self.COMMAND_PREFIX
+        ]
 
 
 config = Config()
@@ -77,7 +93,7 @@ async def setup():
     )
 
     print("starting...")
-    #await bot.add_cog(MiscCommands(backend, config))
+    await bot.add_cog(MiscCommands(backend, config))
     await bot.add_cog(PlayerCommands(backend, config))
     await bot.add_cog(UmpireCommands(backend, config))
     await bot.add_cog(AdminCommands(backend))
