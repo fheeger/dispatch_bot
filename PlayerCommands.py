@@ -42,7 +42,7 @@ class PlayerCommands(DispatchBotCog):
 
     @commands.command()
     async def howto(self, ctx):
-        """-> Information on how to use the bot as a player."""
+        """-> I nformation on how to use the bot as a player."""
         message = open("data/howto_player.txt", "rt").read()
         await ctx.send(message % self.config.COMMAND_PREFIX)
 

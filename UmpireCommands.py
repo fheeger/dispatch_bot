@@ -438,7 +438,7 @@ class UmpireCommands(DispatchBotCog):
     @commands.command()
     async def broadcast(self, ctx):
         """-> Send a message to all player channels."""
-        message = ctx.message.content.split(" ", 1)[1]
+        message = ctx.message.content.split(None, 1)[1]
 
         try:
             response = await self.call_game_url(
@@ -466,7 +466,7 @@ class UmpireCommands(DispatchBotCog):
                 await ctx.send(
                     "There was an error sending broadcast message to %s: Could not find channel" % r["channel_id"]
                 )
-        await ctx.send("Broad cast send to %i/%i channels." % (send, len(response)))
+        await ctx.send("Broadcast send to %i/%i channels." % (send, len(response)))
 
     @commands.command()
     async def url(self, ctx):
