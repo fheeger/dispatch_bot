@@ -19,11 +19,16 @@ def get_channel_by_name(guild, name):
 
 
 async def deliver(guild, message):
-    dispatch_text = "Dispatch from %s:\n>>> %s" % (message["sender"], message["text"])
+    if message["showSender"]:
+        dispatch_text = "Dispatch from {sender}:\n>>> {text}".format(**message)
+    else:
+        dispatch_text = "Dispatch:\n>>> {}".format(message["text"])
+
     channel = guild.get_channel(message["channelId"])
     if channel is None:
         raise ValueError("Can not find channel {}".format(message["channelName"]))
     await channel.send(dispatch_text)
+
 
 def get_category_names_from_ids(guild, ids):
     return [guild.get_channel(channel_id['number']).name for channel_id in ids]
