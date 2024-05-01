@@ -1,9 +1,10 @@
 import requests
 import json
 
+from BackendCallError import BackendCallError
+
 
 class BackendClient:
-
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -28,7 +29,8 @@ class BackendClient:
         if res_id:
             this_url += '/' + str(res_id)
         response = requests.get(this_url, headers=self.headers, params=params)
-        response.raise_for_status()
+        if is_error(response.status_code):
+            raise BackendCallError(response)
         return response.json()
 
     def patch_url(self, url_function, res_id=None, data=None, params=None):
@@ -39,12 +41,18 @@ class BackendClient:
         if data:
             data = json.dumps(data)
         response = requests.patch(url, data=data, headers=self.headers, params=params)
-        response.raise_for_status()
+        if is_error(response.status_code):
+            raise BackendCallError(response)
         return response.json()
 
     def post_url(self, url_function, data=None, params=None):
         """ general function post to create"""
         url = self.base_url + url_function
         response = requests.post(url, data=json.dumps(data), headers=self.headers, params=params)
-        response.raise_for_status()
+        if is_error(response.status_code):
+            raise BackendCallError(response)
         return response.json()
+
+
+def is_error(http_status: int):
+    return http_status >= 400

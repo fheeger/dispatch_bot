@@ -1,3 +1,5 @@
+import traceback
+
 from discord.ext import commands
 from requests import HTTPError
 
@@ -16,11 +18,7 @@ class PlayerCommands(DispatchBotCog):
         self.config = config
 
     async def call_dispatch_url(self, ctx, data):
-        try:
-            return self.backend.call("POST", self.config.POST_MESSAGE_PATH, None, data, {"server_id": ctx.guild.id, "category_id": ctx.channel.category_id})
-        except HTTPError as e:
-            await DispatchErrorHandler().handle(ctx, e)
-            return None
+        return self.backend.call("POST", self.config.POST_MESSAGE_PATH, None, data, {"server_id": ctx.guild.id, "category_id": ctx.channel.category_id})
 
     @commands.command(aliases=["Dispatch"])
     async def dispatch(self, ctx):
@@ -40,6 +38,7 @@ class PlayerCommands(DispatchBotCog):
             if await self.call_dispatch_url(ctx, data=data):
                 await ctx.message.add_reaction(self.config.SEND_EMOJI)
         except Exception as e:
+            print(traceback.format_exc())
             await ctx.send("There was an error sending your dispatch: %s" % str(e)[:1000])
 
     @commands.command()
@@ -50,8 +49,9 @@ class PlayerCommands(DispatchBotCog):
 
 
 class DispatchErrorHandler(GameUrlErrorHandler):
-    async def handle(self, ctx, error):
+    @staticmethod
+    async def handle(ctx, error):
         if error.response.status_code == 422:
             await ctx.send(error.response.text.strip("\""))
         else:
-            await super().handle(ctx, error)
+            await GameUrlErrorHandler.handle(ctx, error)

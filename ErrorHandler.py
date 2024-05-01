@@ -1,29 +1,37 @@
+from error_type import *
+
+
 class ErrorHandler:
-    async def handle(self, ctx, error):
+    @staticmethod
+    async def handle(ctx, error):
         await ctx.send("There was an error calling the server: {}".format(str(error)[:1000]))
         raise error
 
 
 class GameUrlErrorHandler(ErrorHandler):
-    async def handle(self, ctx, error):
-        if error.response.status_code == 404:
+    @staticmethod
+    async def handle(ctx, error):
+        if error.error_type == GAME_NOT_FOUND:
             await ctx.send("Error finding your game: No game found.\n"
                            "Make sure your categories are set up correctly.")
-        elif error.response.status_code == 400:
+        elif error.error_type == GAME_AMBIGUOUS:
             await ctx.send("Error finding your game: Multiple games found.\n"
                            "Make sure your categories are set up correctly.")
-        elif error.response.status_code == 403:
+        elif error.error_type == NO_ACCOUNT:
             await ctx.send("You cannot start a game without creating and account first.\n"
                            "Use the create_account command to do so.")
-        elif error.response.status_code == 406:
+        elif error.error_type == GAME_ALREADY_EXISTS:
             await ctx.send("A game with the same name is already going on! Please choose another name")
         else:
-            await super().handle(ctx, error)
+            await ErrorHandler.handle(ctx, error)
+        raise error
 
 
 class AccountUrlErrorHandler(ErrorHandler):
-    async def handle(self, ctx, error):
+    @staticmethod
+    async def handle(ctx, error):
         if error.response.status_code == 406:
             await ctx.send("ERROR: {}".format(error.response.text))
         else:
-            await super().handle(ctx, error)
+            await ErrorHandler.handle(ctx, error)
+        raise error

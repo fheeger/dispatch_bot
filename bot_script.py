@@ -40,6 +40,7 @@ def load_var_from_system(name, default):
             print("defaulting to %s for variable %s" % (default, name))
             return default
     else:
+        print(f"value: {var}")
         return var
 
 
