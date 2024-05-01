@@ -23,11 +23,11 @@ async def deliver(guild, message):
         dispatch_text = "Dispatch from {sender}:\n>>> {text}".format(**message)
     else:
         dispatch_text = "Dispatch:\n>>> {}".format(message["text"])
-
-    channel = guild.get_channel(message["channelId"])
-    if channel is None:
-        raise ValueError("Can not find channel {}".format(message["channelName"]))
-    await channel.send(dispatch_text)
+    for recipient in message["channels_list"]:
+        channel = guild.get_channel(recipient["channelId"])
+        if channel is None:
+            raise ValueError("Can not find channel {}".format(recipient["channelName"]))
+        await channel.send(dispatch_text)
 
 
 def get_category_names_from_ids(guild, ids):
