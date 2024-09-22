@@ -6,7 +6,7 @@ def is_new(message, config):
 
 
 def is_older_than(message, max_age):
-    return datetime.datetime.now() - message.created_at > max_age
+    return datetime.datetime.now(datetime.timezone.utc) - message.created_at > max_age
 
 
 def has_emoji(message, emoji):
