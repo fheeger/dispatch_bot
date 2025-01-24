@@ -23,7 +23,7 @@ Use the [discord invite link]([https://discord.com/api/oauth2/authorize?client_i
 ### Creating an Account
 To access the umpire interface through your web browser you will need an account. 
 You can create one by typing `!creat_account <account name>`, where `<account_name>` is the name you want to use to login.
-E.g. `!creat_account felix`
+E.g. `!create_account felix`
 The bot will send you a DM with your password.
 ### Starting a game
 With the `!start_game <game_name>` command you can start a new game.
